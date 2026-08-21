@@ -46,9 +46,22 @@ PAGES: list[tuple[str, str]] = [
     ("tag/premium-brands", "tag/premium-brands/index.html"),
 ]
 
+# Root-level static files fetched from Ploy and rewritten for soulstone.co
+ROOT_FILES: list[tuple[str, str]] = [
+    ("robots.txt", "robots.txt"),
+    ("sitemap-index.xml", "sitemap-index.xml"),
+    ("sitemap-0.xml", "sitemap-0.xml"),
+]
+
+# Safe to fetch/refresh from Ploy
 STATIC_ASSETS = [
     "/_ploy_static/_astro/Layout.TeYpMCHh.css",
     "/_ploy_static/_astro/site-header.b9Kqj_FD.js",
+]
+
+# Never overwrite — local remaps or GitHub Pages-specific fixes
+PROTECTED_STATIC_ASSETS = [
+    "/_ploy_static/_astro/dial-canvas.CyRCYrVZ.js",
 ]
 
 LEGACY_ROOT_FILES = [
@@ -68,9 +81,14 @@ def fetch(url: str) -> str:
     return result.stdout
 
 
+def transform_content(content: str) -> str:
+    content = content.replace(PLOY_ORIGIN, SITE_ORIGIN)
+    content = content.replace("http://soulstone.co", SITE_ORIGIN)
+    return content
+
+
 def transform_html(html: str) -> str:
-    html = html.replace(PLOY_ORIGIN, SITE_ORIGIN)
-    html = html.replace("http://soulstone.co", SITE_ORIGIN)
+    html = transform_content(html)
 
     # Legacy export used *.html paths and pointed blog at Ploy.
     replacements = {
@@ -83,28 +101,17 @@ def transform_html(html: str) -> str:
     for old, new in replacements.items():
         html = html.replace(old, new)
 
-    html = re.sub(
-        r'<link rel="canonical" href="[^"]*\.html"',
-        lambda m: m.group(0).split('"')[0] + '"',
-        html,
-    )
-    # Fix any remaining relative canonicals like faq.html
-    html = re.sub(
-        r'(<link rel="canonical" href=")(?!https?://)[^"]+\.html(")',
-        r"\1" + SITE_ORIGIN + r"\2",
-        html,
-    )
-
     if PLOY_ORIGIN in html or "my-site-376b3de7" in html:
         raise RuntimeError("Ploy origin still present after transform")
 
     return html
 
 
-def download_static_asset(asset_path: str) -> None:
+def download_static_asset(asset_path: str, *, protected: bool = False) -> None:
     dest = ROOT / asset_path.lstrip("/")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.exists():
+    if protected and dest.exists():
+        print(f"  kept protected {asset_path}")
         return
     url = PLOY_ORIGIN + asset_path
     content = fetch(url)
@@ -116,6 +123,8 @@ def main() -> int:
     print("Downloading static assets...")
     for asset in STATIC_ASSETS:
         download_static_asset(asset)
+    for asset in PROTECTED_STATIC_ASSETS:
+        download_static_asset(asset, protected=True)
 
     print("Fetching and writing pages...")
     for ploy_path, out_path in PAGES:
@@ -125,6 +134,15 @@ def main() -> int:
         dest = ROOT / out_path
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(html, encoding="utf-8")
+
+    print("Fetching root files (robots, sitemaps)...")
+    for ploy_path, out_path in ROOT_FILES:
+        url = f"{PLOY_ORIGIN}/{ploy_path}"
+        print(f"  {url} -> {out_path}")
+        content = transform_content(fetch(url))
+        if PLOY_ORIGIN in content or "my-site-376b3de7" in content:
+            raise RuntimeError(f"Ploy origin still present in {out_path}")
+        (ROOT / out_path).write_text(content, encoding="utf-8")
 
     print("Removing legacy root *.html pages...")
     for legacy in LEGACY_ROOT_FILES:
