@@ -1,4 +1,4 @@
-import{j as y}from"./jsx-runtime.DXco-PnT.js";import{r as x}from"./index.BCvWX60U.js";globalThis.process??={};globalThis.process.env??={};const D="assets/c6b425b1-moser-fume-dial-clean.png",I=`#version 300 es
+import{j as y}from"./jsx-runtime.DXco-PnT.js";import{r as x}from"./index.BCvWX60U.js";globalThis.process??={};globalThis.process.env??={};const D="/assets/c6b425b1-moser-fume-dial-clean.png",I=`#version 300 es
 precision highp float;
 
 uniform vec2 u_resolution;
