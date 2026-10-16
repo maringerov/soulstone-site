@@ -1,0 +1,25 @@
+# Soulstone
+
+> Soulstone is the Shopify and Shopify Plus practice of Marin Gerov, an independent developer and conversion specialist based in Amsterdam (Europe/Amsterdam timezone). He works with a small number of premium, design-led brands (watches, cars, crafts and other objects made with care), mostly through referrals. The work covers product pages, navigation and checkout flows, re-architecting overgrown Shopify Plus stores, checkout and customer account extensions, product data and integrations, and connecting marketing spend to on-site revenue.
+
+Contact: marin@soulstone.co. First step is a free 30-minute store teardown.
+Profiles: https://www.linkedin.com/in/maringerov, https://x.com/maringerov, https://www.linkedin.com/company/soulstone
+
+## Services
+- [Freelance Shopify Plus developer in Amsterdam](https://soulstone.co/shopify-plus-developer-amsterdam): who the work is for, services, process and FAQ.
+- [Shopify Plus architecture](https://soulstone.co/shopify-plus-architecture): re-architecting complex Plus setups, app consolidation, performance.
+- [Results](https://soulstone.co/results): anonymised case study of a premium Shopify Plus rebuild.
+- [FAQ](https://soulstone.co/faq): fit, engagement model, teardown, how lift is measured.
+
+## Journal
+- [owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy](https://soulstone.co/blog/checkout-extension-metafields-owner-type): the API 2026-10 change, before and after TOML, and a repo check script.
+- [The price keeps reverting. The theme is not the problem.](https://soulstone.co/blog/price-keeps-reverting-theme-not-the-problem): tracing which system writes a Shopify price, and mapping every writer before touching code.
+- [Most premium brands have a conversion problem, not a traffic problem](https://soulstone.co/blog/conversion-not-traffic-problem)
+- [The hidden cost of Shopify Plus app sprawl](https://soulstone.co/blog/hidden-cost-shopify-plus-app-sprawl)
+- [Mobile speed and conversion on premium Shopify](https://soulstone.co/blog/mobile-speed-conversion-premium-shopify)
+- [The anatomy of a product page that closes premium buyers](https://soulstone.co/blog/premium-product-page-anatomy)
+- [Replatforming is usually the wrong answer](https://soulstone.co/blog/replatforming-usually-wrong-answer)
+- Feed: https://soulstone.co/rss.xml
+
+## Optional
+- [Sitemap](https://soulstone.co/sitemap-index.xml)
