@@ -1,0 +1,75 @@
+{
+  "origin": "https://soulstone.co",
+  "site_name": "Soulstone",
+  "og_image": "/assets/og-default.jpg",
+  "og_image_alt": "Soulstone: freelance Shopify Plus developer and conversion specialist in Amsterdam",
+  "feed": {
+    "path": "/rss.xml",
+    "title": "The Soulstone Journal",
+    "description": "Notes on Shopify Plus conversion, store architecture and product data, written by Marin Gerov, an independent Shopify Plus developer in Amsterdam."
+  },
+  "author": {
+    "id": "#marin",
+    "name": "Marin Gerov",
+    "job_title": "Freelance Shopify Plus Developer and Conversion Specialist",
+    "bio": "Independent Shopify and Shopify Plus developer in Amsterdam. Works with premium, design-led brands on product pages, checkout flows and store architecture, mostly through referrals.",
+    "page": "/shopify-plus-developer-amsterdam",
+    "email": "marin@soulstone.co"
+  },
+  "profiles": {
+    "x": "https://x.com/maringerov",
+    "linkedin": "https://www.linkedin.com/in/maringerov",
+    "linkedin_company": "https://www.linkedin.com/company/soulstone",
+    "shopify_partner": "PLACEHOLDER: Shopify Partner directory URL",
+    "booking": "PLACEHOLDER: booking URL"
+  },
+  "business": {
+    "id": "#business",
+    "name": "Soulstone",
+    "description": "Independent Shopify and Shopify Plus development and conversion practice in Amsterdam, working with premium, design-led brands.",
+    "slogan": "Good marketing creates attention. Good e-commerce captures it.",
+    "address": { "addressLocality": "Amsterdam", "addressCountry": "NL" },
+    "area_served": ["Netherlands", "Europe", "Worldwide"],
+    "service_types": [
+      "Shopify Plus development",
+      "Shopify Plus conversion rate optimisation",
+      "Shopify Plus architecture",
+      "Shopify checkout optimisation",
+      "Shopify store performance"
+    ],
+    "knows_about": [
+      "Shopify",
+      "Shopify Plus",
+      "Conversion rate optimization",
+      "Ecommerce architecture",
+      "Checkout extensibility",
+      "Store performance optimization"
+    ]
+  },
+  "services": [
+    {
+      "name": "Shopify Plus conversion rebuild",
+      "description": "Rebuilding product pages, navigation and purchase flows so the attention a premium brand already earns turns into orders.",
+      "url": "/shopify-plus-developer-amsterdam#services"
+    },
+    {
+      "name": "Shopify Plus architecture",
+      "description": "Re-architecting overgrown Shopify Plus setups: app consolidation, storefront rebuilds and clean revenue data.",
+      "url": "/shopify-plus-architecture"
+    },
+    {
+      "name": "Checkout and customer account extensions",
+      "description": "Checkout UI extensions, customer account extensions and Shopify Functions that replace checkout.liquid customisations.",
+      "url": "/shopify-plus-developer-amsterdam#services"
+    }
+  ],
+  "service_nodes_on": ["/", "/shopify-plus-developer-amsterdam"],
+  "static_pages": [
+    { "path": "/", "lastmod": "2026-10-16" },
+    { "path": "/shopify-plus-developer-amsterdam", "lastmod": "2026-10-16" },
+    { "path": "/shopify-plus-architecture", "lastmod": "2026-10-16" },
+    { "path": "/results", "lastmod": "2026-10-16" },
+    { "path": "/faq", "lastmod": "2026-10-16" }
+  ],
+  "min_tag_posts_in_sitemap": 2
+}
