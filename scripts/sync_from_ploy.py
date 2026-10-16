@@ -13,45 +13,39 @@ PLOY_ORIGIN = "https://my-site-376b3de7.ploy.build"
 SITE_ORIGIN = "https://soulstone.co"
 
 # path on Ploy -> output path in repo (relative to ROOT)
+# Blog posts, the blog index and tag pages are NOT listed: they are owned by
+# generator/build.py and must never be fetched from Ploy again.
 PAGES: list[tuple[str, str]] = [
     ("", "index.html"),
     ("faq", "faq/index.html"),
     ("results", "results/index.html"),
     ("shopify-plus-architecture", "shopify-plus-architecture/index.html"),
-    ("blog", "blog/index.html"),
-    (
-        "blog/conversion-not-traffic-problem",
-        "blog/conversion-not-traffic-problem/index.html",
-    ),
-    (
-        "blog/hidden-cost-shopify-plus-app-sprawl",
-        "blog/hidden-cost-shopify-plus-app-sprawl/index.html",
-    ),
-    (
-        "blog/mobile-speed-conversion-premium-shopify",
-        "blog/mobile-speed-conversion-premium-shopify/index.html",
-    ),
-    (
-        "blog/premium-product-page-anatomy",
-        "blog/premium-product-page-anatomy/index.html",
-    ),
-    (
-        "blog/replatforming-usually-wrong-answer",
-        "blog/replatforming-usually-wrong-answer/index.html",
-    ),
-    ("tag/conversion", "tag/conversion/index.html"),
-    ("tag/shopify-plus", "tag/shopify-plus/index.html"),
-    ("tag/architecture", "tag/architecture/index.html"),
-    ("tag/performance", "tag/performance/index.html"),
-    ("tag/premium-brands", "tag/premium-brands/index.html"),
 ]
 
-# Root-level static files fetched from Ploy and rewritten for soulstone.co
-ROOT_FILES: list[tuple[str, str]] = [
-    ("robots.txt", "robots.txt"),
-    ("sitemap-index.xml", "sitemap-index.xml"),
-    ("sitemap-0.xml", "sitemap-0.xml"),
-]
+# Paths written by generator/build.py. Anything under these prefixes is
+# refused by write_output(), whatever the PAGES/ROOT_FILES lists say.
+GENERATOR_OWNED: tuple[str, ...] = (
+    "blog/",
+    "tag/",
+    "sitemap-index.xml",
+    "sitemap-0.xml",
+    "rss.xml",
+)
+
+# Hand-maintained in this repo, not on Ploy. Also refused by write_output().
+HAND_MAINTAINED: tuple[str, ...] = (
+    "robots.txt",
+    "llms.txt",
+    "shopify-plus-developer-amsterdam/",
+    "assets/",
+    "generator/",
+    "posts/",
+)
+
+# Root-level static files fetched from Ploy and rewritten for soulstone.co.
+# robots.txt and the sitemaps used to be here; robots.txt is hand-maintained
+# and the sitemaps come from the generator.
+ROOT_FILES: list[tuple[str, str]] = []
 
 # Safe to fetch/refresh from Ploy
 STATIC_ASSETS = [
@@ -59,9 +53,12 @@ STATIC_ASSETS = [
     "/_ploy_static/_astro/site-header.b9Kqj_FD.js",
 ]
 
-# Never overwrite — local remaps or GitHub Pages-specific fixes
+# Never overwrite: local remaps or GitHub Pages-specific fixes
+# (WebP dial with PNG fallback, hero visible without JS, footer links).
 PROTECTED_STATIC_ASSETS = [
     "/_ploy_static/_astro/dial-canvas.CyRCYrVZ.js",
+    "/_ploy_static/_astro/closing-cta.B27vAxRK.js",
+    "/_ploy_static/_astro/site-footer.DULiVXzC.js",
 ]
 
 LEGACY_ROOT_FILES = [
@@ -69,6 +66,26 @@ LEGACY_ROOT_FILES = [
     "results.html",
     "shopify-plus-architecture.html",
 ]
+
+
+def is_protected(rel_path: str) -> str | None:
+    """Return the matching protected prefix for a repo-relative path, if any."""
+    rel = rel_path.lstrip("/")
+    for prefix in GENERATOR_OWNED + HAND_MAINTAINED:
+        if rel == prefix or rel.startswith(prefix):
+            return prefix
+    return None
+
+
+def write_output(rel_path: str, content: str) -> None:
+    prefix = is_protected(rel_path)
+    if prefix:
+        raise RuntimeError(
+            f"refusing to write {rel_path}: '{prefix}' is generator-owned or hand-maintained"
+        )
+    dest = ROOT / rel_path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(content, encoding="utf-8")
 
 
 def fetch(url: str) -> str:
@@ -120,6 +137,11 @@ def download_static_asset(asset_path: str, *, protected: bool = False) -> None:
 
 
 def main() -> int:
+    for ploy_path, out_path in PAGES + ROOT_FILES:
+        prefix = is_protected(out_path)
+        if prefix:
+            raise RuntimeError(f"{out_path} is listed for sync but '{prefix}' is protected")
+
     print("Downloading static assets...")
     for asset in STATIC_ASSETS:
         download_static_asset(asset)
@@ -130,10 +152,7 @@ def main() -> int:
     for ploy_path, out_path in PAGES:
         url = f"{PLOY_ORIGIN}/{ploy_path}" if ploy_path else f"{PLOY_ORIGIN}/"
         print(f"  {url} -> {out_path}")
-        html = transform_html(fetch(url))
-        dest = ROOT / out_path
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(html, encoding="utf-8")
+        write_output(out_path, transform_html(fetch(url)))
 
     print("Fetching root files (robots, sitemaps)...")
     for ploy_path, out_path in ROOT_FILES:
@@ -142,7 +161,7 @@ def main() -> int:
         content = transform_content(fetch(url))
         if PLOY_ORIGIN in content or "my-site-376b3de7" in content:
             raise RuntimeError(f"Ploy origin still present in {out_path}")
-        (ROOT / out_path).write_text(content, encoding="utf-8")
+        write_output(out_path, content)
 
     print("Removing legacy root *.html pages...")
     for legacy in LEGACY_ROOT_FILES:
@@ -150,6 +169,9 @@ def main() -> int:
         if path.exists():
             path.unlink()
             print(f"  removed {legacy}")
+
+    print("Re-applying the shared head block and rebuilding the blog...")
+    subprocess.run([sys.executable, str(ROOT / "generator" / "build.py")], check=True)
 
     print("Done.")
     return 0
