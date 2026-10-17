@@ -1,0 +1,36 @@
+name: Build and check site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Blog generator build, output check and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install generator dependencies
+        run: pip install -r generator/requirements.txt
+
+      - name: Build must succeed (fails on em or en dashes in posts)
+        run: python3 generator/build.py
+
+      - name: Committed output must match a fresh build
+        run: |
+          python3 generator/build.py --check
+          git diff --exit-code --stat
+          test -z "$(git status --porcelain)" || { echo "untracked or modified files after build:"; git status --porcelain; exit 1; }
+
+      - name: Lint pages, sitemap, RSS and JSON-LD
+        run: python3 generator/lint.py

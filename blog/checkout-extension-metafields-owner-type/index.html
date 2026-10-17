@@ -1,0 +1,268 @@
+<!DOCTYPE html><html lang="en" class="dark"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="icon" type="image/x-icon" href="/favicon.ico"><meta name="generator" content="Astro v6.1.9"><meta name="ploy-astro-starter-version" content="1.0.0"><title>owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy | Soulstone</title><meta name="description" content="From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check."/><meta name="robots" content="index, follow"/><link rel="canonical" href="https://soulstone.co/blog/checkout-extension-metafields-owner-type"/><meta property="og:type" content="article"/><meta property="og:title" content="owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy | Soulstone"/><meta property="og:site_name" content="Soulstone"/><meta property="og:description" content="From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check."/><meta property="og:url" content="https://soulstone.co/blog/checkout-extension-metafields-owner-type"/><!-- soulstone-head:start --><meta property="og:image" content="https://soulstone.co/assets/og-default.jpg"/><meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/><meta property="og:image:alt" content="Soulstone: freelance Shopify Plus developer and conversion specialist in Amsterdam"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:image" content="https://soulstone.co/assets/og-default.jpg"/><link rel="alternate" type="application/rss+xml" title="The Soulstone Journal" href="/rss.xml"/><!-- soulstone-head:end --><meta name="twitter:title" content="owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy | Soulstone"/><meta name="twitter:description" content="From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check."/><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"ProfessionalService","@id":"https://soulstone.co/#business","name":"Soulstone","url":"https://soulstone.co","email":"marin@soulstone.co","description":"Independent Shopify and Shopify Plus development and conversion practice in Amsterdam, working with premium, design-led brands.","slogan":"Good marketing creates attention. Good e-commerce captures it.","image":"https://soulstone.co/assets/og-default.jpg","logo":"https://soulstone.co/assets/og-default.jpg","founder":{"@id":"https://soulstone.co/#marin"},"address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"areaServed":["Netherlands","Europe","Worldwide"],"serviceType":["Shopify Plus development","Shopify Plus conversion rate optimisation","Shopify Plus architecture","Shopify checkout optimisation","Shopify store performance"],"knowsAbout":["Shopify","Shopify Plus","Conversion rate optimization","Ecommerce architecture","Checkout extensibility","Store performance optimization"],"contactPoint":{"@type":"ContactPoint","email":"marin@soulstone.co","contactType":"sales"},"sameAs":["https://www.linkedin.com/company/soulstone","https://x.com/maringerov","PLACEHOLDER: Shopify Partner directory URL"],"potentialAction":{"@type":"ReserveAction","name":"Book a 30-minute store teardown","target":"PLACEHOLDER: booking URL"}},{"@type":"Person","@id":"https://soulstone.co/#marin","name":"Marin Gerov","jobTitle":"Freelance Shopify Plus Developer and Conversion Specialist","description":"Independent Shopify and Shopify Plus developer in Amsterdam. Works with premium, design-led brands on product pages, checkout flows and store architecture, mostly through referrals.","email":"marin@soulstone.co","url":"https://soulstone.co/shopify-plus-developer-amsterdam","worksFor":{"@id":"https://soulstone.co/#business"},"address":{"@type":"PostalAddress","addressLocality":"Amsterdam","addressCountry":"NL"},"knowsAbout":["Shopify","Shopify Plus","Conversion rate optimization","Ecommerce architecture","Checkout extensibility","Store performance optimization"],"sameAs":["https://www.linkedin.com/in/maringerov","https://x.com/maringerov"]},{"@type":"WebSite","name":"Soulstone","url":"https://soulstone.co","publisher":{"@id":"https://soulstone.co/#business"}},{"@type":"Article","@id":"https://soulstone.co/blog/checkout-extension-metafields-owner-type#article","headline":"owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy","description":"From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check.","image":"https://soulstone.co/assets/og-default.jpg","datePublished":"2026-10-22T00:00:00.000Z","dateModified":"2026-10-22T00:00:00.000Z","author":{"@id":"https://soulstone.co/#marin"},"publisher":{"@id":"https://soulstone.co/#business"},"keywords":"shopify, changelog, checkout-extensibility, metafields, ui-extensions","url":"https://soulstone.co/blog/checkout-extension-metafields-owner-type","mainEntityOfPage":"https://soulstone.co/blog/checkout-extension-metafields-owner-type"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Blog","item":"https://soulstone.co/blog"},{"@type":"ListItem","position":2,"name":"owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy","item":"https://soulstone.co/blog/checkout-extension-metafields-owner-type"}]}]}</script><link rel="stylesheet" href="/_ploy_static/_astro/Layout.TeYpMCHh.css"><script data-ploy-experiments="1" data-astro-rerun>window.__ployExperiments=[]</script><script data-ploy-selections="1" data-astro-rerun>window.__ploySelections=[]</script><script data-ploy-analytics="1">
+(function(){
+  if(window.__ployAnalyticsInstalled)return;window.__ployAnalyticsInstalled=true;
+  var BUILTIN_TRACK_EVENTS={"session.started":1,"session.heartbeat":1,"session.ended":1,"page.scroll_depth_reached":1,"cta.clicked":1,"link.outbound_clicked":1,"form.started":1,"form.submitted":1,"site_search.performed":1,"experiment.exposed":1};
+  var RESERVED_TRACK_PREFIXES=["session.","page.","cta.","link.","form.","site_search.","experiment."];
+  var CUSTOM_TRACK_NAME_RE=/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
+  function isValidTrackName(name){if(BUILTIN_TRACK_EVENTS[name])return true;if(!CUSTOM_TRACK_NAME_RE.test(name))return false;for(var i=0;i<RESERVED_TRACK_PREFIXES.length;i+=1){if(name.indexOf(RESERVED_TRACK_PREFIXES[i])===0)return false}return true}
+  var p=window.ploy||{};
+  p.track=function(name,properties){try{if(typeof name!=="string"||!name)return;if(!isValidTrackName(name)){console.warn("[ploy] invalid event name: "+name);return}recordActivity();sendEvent("track",name,properties)}catch(e){}};
+  p.identify=function(userId,traits){try{if(typeof userId!=="string"||!userId)return;recordActivity();sendIdentify(userId,traits)}catch(e){}};
+  window.ploy=p;
+  var INGEST="/_ploy/ingest",ANON_KEY="ploy_anon_id",SESSION_KEY="ploy_session",COOKIE_MAX_AGE=365*24*60*60,TIMEOUT_MS=30*60*1000,HEARTBEAT_MS=15000,SCROLL_MILESTONES=[25,50,75,90],cookieDomain,anon,sessionId,sessionExpiresAt=0,sessionStartedSent=false,heartbeatTimer=null,heartbeatIndex=0,lastActivityAt=0,ended=false,pageKey="",scrollSeen={},lastExposureKey="";
+  function uuid(){try{if(crypto&&crypto.randomUUID)return crypto.randomUUID()}catch(e){}return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+  function nowIso(){return new Date().toISOString()}
+  function readStorage(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function writeStorage(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function readCookie(k){try{var prefix=k+"=",parts=document.cookie.split("; ");for(var i=0;i<parts.length;i+=1){if(parts[i].indexOf(prefix)===0)return decodeURIComponent(parts[i].slice(prefix.length))}}catch(e){}return null}
+  function getCookieDomain(){if(cookieDomain!==undefined)return cookieDomain;try{var host=location.hostname,parts=host.split(".");if(parts.length<2||/^\d+\.\d+\.\d+\.\d+$/.test(host)||host.indexOf(":")>=0||host==="ploy.build"||host.endsWith(".ploy.build")||host==="ploy.site"||host.endsWith(".ploy.site"))return cookieDomain=null;var probe="__ploy_tld_"+Math.random().toString(36).slice(2);for(var i=parts.length-2;i>=0;i-=1){var domain=parts.slice(i).join("."),attrs="Domain=."+domain+"; Path=/; SameSite=Lax";document.cookie=probe+"=1; "+attrs;if(readCookie(probe)==="1"){document.cookie=probe+"=; Max-Age=0; "+attrs;return cookieDomain=domain}}}catch(e){}return cookieDomain=null}
+  function writeAnonCookie(v){try{var domain=getCookieDomain();document.cookie=ANON_KEY+"="+encodeURIComponent(v)+"; Max-Age="+COOKIE_MAX_AGE+"; Path=/; SameSite=Lax"+(domain?"; Domain=."+domain:"")+(location.protocol==="https:"?"; Secure":"")}catch(e){}}
+  function persistAnon(v){writeStorage(ANON_KEY,v);writeAnonCookie(v)}
+  function getAnon(){var v=readCookie(ANON_KEY)||readStorage(ANON_KEY)||uuid();persistAnon(v);return v}
+  function loadSession(){var raw=readStorage(SESSION_KEY);if(!raw)return null;try{var parsed=JSON.parse(raw);if(parsed&&typeof parsed.id==="string"&&typeof parsed.expiresAt==="number")return parsed}catch(e){}return null}
+  function persistSession(){writeStorage(SESSION_KEY,JSON.stringify({id:sessionId,expiresAt:sessionExpiresAt}))}
+  function currentUrl(){return location.href}
+  function currentPath(){return location.pathname}
+  function currentPage(){return{url:currentUrl(),path:currentPath(),title:document.title,referrer:document.referrer||""}}
+  function touchSession(){var existing=loadSession(),now=Date.now();if(existing&&existing.expiresAt>now){sessionId=existing.id;sessionExpiresAt=existing.expiresAt}else{sessionId=uuid();sessionExpiresAt=0;sessionStartedSent=false;heartbeatIndex=0}lastActivityAt=now;sessionExpiresAt=now+TIMEOUT_MS;persistSession()}
+  function ensureSession(){if(!sessionId||sessionExpiresAt<=Date.now())touchSession();return sessionId}
+  function currentExperiments(){return Array.isArray(window.__ployExperiments)?window.__ployExperiments:[]}
+  function buildContext(extra){var page=currentPage();return Object.assign({sessionId:ensureSession(),page:{url:page.url,path:page.path,title:page.title,referrer:page.referrer},userAgent:navigator.userAgent,locale:navigator.language,environment:{viewportWidth:window.innerWidth,viewportHeight:window.innerHeight,screenWidth:screen.width||0,screenHeight:screen.height||0},experiments:currentExperiments()},extra||{})}
+  function sendPayload(payload){navigator.sendBeacon(INGEST,new Blob([JSON.stringify(payload)],{type:"application/json"}))}
+  function sendEvent(type,eventName,properties,contextExtra){try{sendPayload({type:type,event:eventName,anonymousId:anon,userId:null,properties:properties||{},context:buildContext(contextExtra),timestamp:nowIso()})}catch(e){}}
+  function sendIdentify(userId,traits){try{sendPayload({type:"identify",userId:userId,traits:traits||{},anonymousId:anon,context:buildContext(),timestamp:nowIso()})}catch(e){}}
+  /* Astro's ClientRouter both calls history.pushState and dispatches
+     astro:page-load, and fires astro:page-load on the initial load too, so
+     without this guard a view-transition site reports two page.viewed per
+     landing and per navigation. maybeExpose has its own key; this is the same
+     idea for page views. */
+  function sendPageView(){var page=currentPage();var nextPageKey=page.path+"?"+location.search+"#"+location.hash;if(nextPageKey===pageKey)return;pageKey=nextPageKey;scrollSeen={};sendEvent("page","page.viewed",{url:page.url,path:page.path,hash:location.hash||"",search:location.search||"",title:page.title,width:window.innerWidth,height:window.innerHeight})}
+  function startSession(){ensureSession();if(sessionStartedSent)return;sessionStartedSent=true;sendEvent("track","session.started",{entryUrl:currentUrl(),entryPath:currentPath(),referrer:document.referrer||""})}
+  function endSession(reason){if(ended||!sessionId)return;ended=true;var activeSeconds=Math.max(0,Math.round((Date.now()-lastActivityAt)/1000));sendEvent("track","session.ended",{exitUrl:currentUrl(),exitPath:currentPath(),reason:reason,activeSeconds:activeSeconds})}
+  function heartbeat(){if(document.visibilityState!=="visible")return;var now=Date.now();if(now>=sessionExpiresAt){touchSession();startSession()}heartbeatIndex+=1;sendEvent("track","session.heartbeat",{heartbeatIndex:heartbeatIndex,activeSeconds:Math.max(1,Math.round((now-lastActivityAt)/1000)),visible:true})}
+  function resetHeartbeat(){if(heartbeatTimer)clearInterval(heartbeatTimer);heartbeatTimer=setInterval(heartbeat,HEARTBEAT_MS)}
+  function recordActivity(){ended=false;touchSession();startSession()}
+  function maybeScrollDepth(){var doc=document.documentElement;if(!doc)return;var maxScroll=Math.max(doc.scrollHeight-window.innerHeight,1),percent=Math.min(100,Math.round(((window.scrollY+window.innerHeight)/Math.max(doc.scrollHeight,1))*100));for(var i=0;i<SCROLL_MILESTONES.length;i+=1){var milestone=SCROLL_MILESTONES[i];if(percent>=milestone&&!scrollSeen[milestone]){scrollSeen[milestone]=true;sendEvent("track","page.scroll_depth_reached",{percent:milestone,documentHeight:doc.scrollHeight||0,viewportHeight:window.innerHeight})}}}
+  function textFrom(el){var text=(el.getAttribute("aria-label")||el.innerText||el.textContent||"").trim();return text.slice(0,200)}
+  function sameDomain(url){try{return new URL(url,location.href).hostname===location.hostname}catch(e){return false}}
+  function classifySearchSurface(){if(location.pathname.indexOf("/docs")===0)return"docs";if(location.pathname.indexOf("/blog")===0)return"blog";return"site"}
+  function trackInteraction(ev){var node=ev.target;if(!node||!node.closest)return;var el=node.closest("a,button,[role='button'],[role='link'],form,input[type='submit'],button[type='submit']");if(!el)return;recordActivity();if(el.tagName==="A"){var href=el.getAttribute("href")||"";if(!href||href==="#"||href.indexOf("javascript:")===0)return;var absolute;try{absolute=new URL(href,location.href).href}catch(e){absolute=href}if(!sameDomain(absolute)){sendEvent("track","link.outbound_clicked",{targetUrl:absolute,targetDomain:(function(){try{return new URL(absolute).hostname}catch(e){return""}})(),label:textFrom(el)||undefined,sameDomain:false});return}sendEvent("track","cta.clicked",{label:textFrom(el)||undefined,targetUrl:absolute,elementTag:"a",elementRole:el.getAttribute("role")||undefined,elementId:el.id||undefined,elementText:textFrom(el)||undefined})}else{sendEvent("track","cta.clicked",{label:textFrom(el)||undefined,targetUrl:el.getAttribute("data-href")||undefined,elementTag:(el.tagName||"").toLowerCase(),elementRole:el.getAttribute("role")||undefined,elementId:el.id||undefined,elementText:textFrom(el)||undefined})}}
+  var startedForms={};
+  function trackFormStarted(ev){var target=ev.target;if(!target||!target.form)return;var form=target.form;var key=form.id||form.getAttribute("name")||form.getAttribute("action")||"form:"+Object.keys(startedForms).length;if(startedForms[key])return;startedForms[key]=true;recordActivity();sendEvent("track","form.started",{formId:form.id||undefined,formName:form.getAttribute("name")||undefined,formAction:form.getAttribute("action")||undefined})}
+  /* Attempt-based, as production has always been. Success-gating a Ploy form
+     on its /_ploy/form-submit fetch is the more honest signal (a submit event
+     is an attempt, not a capture) but it only observes window.fetch, and a
+     form that posts natively unloads the page before any deferred emit can
+     run. So it cannot cover the case it exists for, while silently zeroing
+     form.submitted (a counted conversion) on older published sites. Worth
+     shipping as its own analytics change with an annotation; not as a side
+     effect of experiments. */
+  function trackFormSubmitted(ev){var form=ev.target;if(!form||form.tagName!=="FORM")return;recordActivity();sendEvent("track","form.submitted",{formId:form.id||undefined,formName:form.getAttribute("name")||undefined,formAction:form.getAttribute("action")||undefined,success:undefined})}
+  function trackSearch(ev){var form=ev.target;if(!form||form.tagName!=="FORM")return;var searchInput=form.querySelector("input[type='search'],input[name='q'],input[name='query'],input[name='search']");if(!searchInput)return;var query=(searchInput.value||"").trim();if(!query)return;recordActivity();sendEvent("track","site_search.performed",{query:query,resultCount:undefined,searchSurface:classifySearchSurface()})}
+  function maybeExpose(){var experiments=currentExperiments();if(!experiments.length)return;var key=experiments.map(function(experiment){return experiment.id+":"+experiment.variantId}).join("|")+":"+currentPath();if(key===lastExposureKey)return;lastExposureKey=key;sendEvent("track","experiment.exposed",{})}
+  function onNavigate(){recordActivity();maybeExpose();sendPageView()}
+  anon=getAnon();touchSession();resetHeartbeat();
+  var op=history.pushState;history.pushState=function(){op.apply(this,arguments);onNavigate()};
+  var or=history.replaceState;history.replaceState=function(){or.apply(this,arguments);onNavigate()};
+  window.addEventListener("popstate",onNavigate);
+  document.addEventListener("astro:page-load",onNavigate);
+  window.addEventListener("scroll",maybeScrollDepth,{passive:true});
+  window.addEventListener("click",trackInteraction,true);
+  window.addEventListener("input",trackFormStarted,true);
+  document.addEventListener("submit",trackFormSubmitted,true);
+  document.addEventListener("submit",trackSearch,true);
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){recordActivity()}else if(document.visibilityState==="hidden"){endSession("visibility_end")}});
+  window.addEventListener("beforeunload",function(){endSession("unload")});
+  ["pointerdown","keydown"].forEach(function(name){window.addEventListener(name,recordActivity,{passive:true})});
+  function boot(){recordActivity();startSession();maybeExpose();sendPageView()}
+  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",boot)}else{boot()}
+})();
+</script></head> <body>  <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();</script><script>(()=>{var A=Object.defineProperty;var C=(i,o,a)=>o in i?A(i,o,{enumerable:!0,configurable:!0,writable:!0,value:a}):i[o]=a;var l=(i,o,a)=>C(i,typeof o!="symbol"?o+"":o,a);var E=new Set(["__proto__","constructor","prototype"]);{let i={0:t=>y(t),1:t=>a(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(a(t)),5:t=>new Set(a(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>Number.POSITIVE_INFINITY*t},o=t=>{let[h,e]=t;return h in i?i[h](e):void 0},a=t=>t.map(o),y=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([h,e])=>[h,o(e)]));class f extends HTMLElement{constructor(){super(...arguments);l(this,"Component");l(this,"hydrator");l(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let c=this.querySelectorAll("astro-slot"),n={},p=this.querySelectorAll("template[data-astro-template]");for(let r of p){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(let r of c){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("name")||"default"]=r.innerHTML)}let u;try{u=this.hasAttribute("props")?y(JSON.parse(this.getAttribute("props"))):{}}catch(r){let s=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(s+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${s}`,this.getAttribute("props"),r),r}let d;await this.hydrator(this)(this.Component,u,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});l(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),c.disconnect(),this.childrenConnectedCallback()},c=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});c.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}async start(){let e=JSON.parse(this.getAttribute("opts")),c=this.getAttribute("client");if(Astro[c]===void 0){window.addEventListener(`astro:${c}`,()=>this.start(),{once:!0});return}try{await Astro[c](async()=>{let n=this.getAttribute("renderer-url"),[p,{default:u}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),d=this.getAttribute("component-export")||"default";if(d.includes(".")){this.Component=p;for(let m of d.split(".")){if(E.has(m)||!this.Component||typeof this.Component!="object"&&typeof this.Component!="function"||!Object.hasOwn(this.Component,m))throw new Error(`Invalid component export path: ${d}`);this.Component=this.Component[m]}}else{if(E.has(d))throw new Error(`Invalid component export path: ${d}`);this.Component=p[d]}return this.hydrator=u,this.hydrate},e,this)}catch(n){console.error("[astro-island] Error hydrating %s",this.getAttribute("component-url"),n)}}attributeChangedCallback(){this.hydrate()}}l(f,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",f)}})();</script><astro-island uid="2e932J" prefix="r4" component-url="/_ploy_static/_astro/dial-canvas.CyRCYrVZ.js" component-export="DialCanvas" renderer-url="/_ploy_static/_astro/client.CXJcWBxe.js" props="{&quot;className&quot;:[0,&quot;fixed inset-0 z-0 h-screen w-screen&quot;]}" ssr client="load" opts="{&quot;name&quot;:&quot;DialCanvas&quot;,&quot;value&quot;:true}" await-children><canvas aria-hidden="true" class="fixed inset-0 z-0 h-screen w-screen"></canvas><!--astro:end--></astro-island> <div class="relative z-10"> <astro-island uid="LSsLw" prefix="r5" component-url="/_ploy_static/_astro/site-header.b9Kqj_FD.js" component-export="SiteHeader" renderer-url="/_ploy_static/_astro/client.CXJcWBxe.js" props="{&quot;links&quot;:[1,[[0,{&quot;label&quot;:[0,&quot;Services&quot;],&quot;href&quot;:[0,&quot;/shopify-plus-architecture&quot;]}],[0,{&quot;label&quot;:[0,&quot;Results&quot;],&quot;href&quot;:[0,&quot;/results&quot;]}],[0,{&quot;label&quot;:[0,&quot;Blog&quot;],&quot;href&quot;:[0,&quot;/blog&quot;]}],[0,{&quot;label&quot;:[0,&quot;FAQ&quot;],&quot;href&quot;:[0,&quot;/faq&quot;]}],[0,{&quot;label&quot;:[0,&quot;Approach&quot;],&quot;href&quot;:[0,&quot;/#approach&quot;]}]]],&quot;ctaLabel&quot;:[0,&quot;Book a teardown&quot;],&quot;ctaHref&quot;:[0,&quot;mailto:marin@soulstone.co&quot;]}" ssr client="load" opts="{&quot;name&quot;:&quot;SiteHeader&quot;,&quot;value&quot;:true}" await-children><header class="fixed inset-x-0 top-0 z-50 transition-all duration-500 border-b border-transparent"><div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10"><a href="/" class="font-heading text-2xl tracking-tight text-ploy-text-primary">Soulstone</a><nav class="hidden items-center gap-10 md:flex"><a href="/shopify-plus-architecture" class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Services</a><a href="/results" class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Results</a><a href="/blog" class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Blog</a><a href="/faq" class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">FAQ</a><a href="/#approach" class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Approach</a></nav><a href="mailto:marin@soulstone.co" class="items-center justify-center gap-2 whitespace-nowrap font-button uppercase tracking-[0.12em] text-xs font-semibold transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ploy-accent-primary/60 [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 bg-ploy-accent-primary text-ploy-button-primary-text hover:bg-ploy-accent-primary-400 h-9 px-4 hidden sm:inline-flex">Book a teardown</a></div></header><!--astro:end--></astro-island> <main>  <article class="bg-ploy-background-primary/92 pt-36 pb-28 backdrop-blur-md lg:pt-44 lg:pb-36"> <div class="mx-auto max-w-3xl px-6 lg:px-10"> <a href="/blog" class="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-ploy-accent-primary transition-opacity hover:opacity-80">
+← The Soulstone Journal
+</a> <h1 class="mt-8 font-heading text-4xl leading-[1.1] tracking-tight text-ploy-text-primary text-balance sm:text-5xl">owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy</h1> <div class="mt-6 flex flex-wrap items-center gap-3 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ploy-text-secondary/70"> <time datetime="2026-10-22T00:00:00.000Z">October 22, 2026</time> <span>· Marin Gerov</span> </div> <div class="prose prose-invert mt-12 max-w-none prose-headings:font-heading prose-headings:tracking-tight prose-a:text-ploy-accent-primary">
+<p>Short answer: if you have a Checkout or Customer Account UI extension that declares metafields in <code>shopify.extension.toml</code>, add <code>owner_type</code> to every declaration now. It is optional on API version 2026-10. On 2027-01 and later, Shopify blocks the deploy if any declaration is missing it. It is a two-minute change per extension, and below is a small script that finds the ones you missed.</p>
+<p>Shopify announced this on 8 October 2026 in the developer changelog. This post shows the before and after, and how I check a repo for it.</p>
+<h2 id="what-changed">What changed?</h2>
+<p>Metafield declarations in <code>[[extensions.metafields]]</code> and <code>[[extensions.targeting.metafields]]</code> now accept an <code>owner_type</code> property. It names the resource that owns the metafield, such as <code>PRODUCT</code> or <code>CUSTOMER</code>. Shopify uses it to load only the metafields from the resource types your extension needs, which makes the extension faster.</p>
+<p>The dates:</p>
+<ul>
+<li>API 2026-10: <code>owner_type</code> is optional.</li>
+<li>API 2027-01: <code>owner_type</code> is required on every declaration. Deploys without it fail validation.</li>
+</ul>
+<p>Extensions that don't declare metafields in the TOML are not affected. Theme code is not affected either.</p>
+<h2 id="which-owner-types-can-i-use">Which owner types can I use?</h2>
+<p>For checkout, the supported values are:</p>
+<table>
+<thead>
+<tr>
+<th>owner_type</th>
+<th>What it loads</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CART</code></td>
+<td>The cart of the current checkout</td>
+</tr>
+<tr>
+<td><code>PRODUCT</code></td>
+<td>Products the buyer is buying</td>
+</tr>
+<tr>
+<td><code>PRODUCTVARIANT</code></td>
+<td>Variants the buyer is buying</td>
+</tr>
+<tr>
+<td><code>CUSTOMER</code></td>
+<td>The signed-in customer</td>
+</tr>
+<tr>
+<td><code>COMPANY</code></td>
+<td>The B2B company</td>
+</tr>
+<tr>
+<td><code>COMPANY_LOCATION</code></td>
+<td>The B2B company location</td>
+</tr>
+<tr>
+<td><code>SHOP</code></td>
+<td>The shop</td>
+</tr>
+</tbody>
+</table>
+<p><code>CUSTOMER</code>, <code>COMPANY</code> and <code>COMPANY_LOCATION</code> data needs protected customer data access, the same as before.</p>
+<h2 id="who-is-affected-in-practice">Who is affected in practice?</h2>
+<p>Any app with a Checkout or Customer Account UI extension that reads metafields from the TOML. On the stores I work with, that is usually one of these:</p>
+<ul>
+<li>A loyalty or account page extension that reads a customer metafield (a loyalty tier or a points balance).</li>
+<li>A checkout note or banner that reads a product or variant metafield (refill information, a gift note, a delivery warning).</li>
+<li>A B2B checkout block that reads company or location data.</li>
+</ul>
+<p>Third-party apps handle their own extensions and API versions. If a store only uses apps from the App Store, the app developer has to make this change, not you. For custom apps, it is on whoever maintains the repo. I ran the script below on a custom app for a body care brand this week. It found over a dozen declarations without <code>owner_type</code> across several extensions (most on customer account pages, a few in checkout), and none of them were on 2026-10 yet.</p>
+<h2 id="does-this-apply-to-customer-account-ui-extensions-too">Does this apply to Customer Account UI extensions too?</h2>
+<p>Yes. The rule is the same for both extension types: <code>owner_type</code> on every metafield declaration, required from 2027-01. The customer account docs list the owner types for that surface, so check them there if your extension runs on account pages.</p>
+<h2 id="what-does-the-change-look-like">What does the change look like?</h2>
+<p>Here is a typical extension on a store I work with: a note under each line item in checkout that reads a product metafield (refill information for a refillable product), plus a gift note that the team sets per variant.</p>
+<p>Before, on 2026-07:</p>
+<pre><code class="language-toml">api_version = &quot;2026-07&quot;
+
+[[extensions]]
+name = &quot;Checkout notes&quot;
+handle = &quot;checkout-notes&quot;
+type = &quot;ui_extension&quot;
+
+  [[extensions.metafields]]
+  namespace = &quot;custom&quot;
+  key = &quot;refill_info&quot;
+
+  [[extensions.targeting]]
+  module = &quot;./src/LineNote.jsx&quot;
+  target = &quot;purchase.checkout.cart-line-item.render-after&quot;
+
+    [[extensions.targeting.metafields]]
+    namespace = &quot;custom&quot;
+    key = &quot;gift_note&quot;
+</code></pre>
+<p>After, on 2026-10:</p>
+<pre><code class="language-toml">api_version = &quot;2026-10&quot;
+
+[[extensions]]
+name = &quot;Checkout notes&quot;
+handle = &quot;checkout-notes&quot;
+type = &quot;ui_extension&quot;
+
+  [[extensions.metafields]]
+  namespace = &quot;custom&quot;
+  key = &quot;refill_info&quot;
+  owner_type = &quot;PRODUCT&quot;
+
+  [[extensions.targeting]]
+  module = &quot;./src/LineNote.jsx&quot;
+  target = &quot;purchase.checkout.cart-line-item.render-after&quot;
+
+    [[extensions.targeting.metafields]]
+    namespace = &quot;custom&quot;
+    key = &quot;gift_note&quot;
+    owner_type = &quot;PRODUCTVARIANT&quot;
+</code></pre>
+<p>Two lines added, plus the version bump.</p>
+<h2 id="what-if-the-same-key-lives-on-two-resources">What if the same key lives on two resources?</h2>
+<p>This is the one case that needs thought. With <code>owner_type</code>, each declaration loads from one resource type. Shopify's migration note is clear: if you need the same namespace and key from more than one resource type, create a separate declaration for each. So if the gift note can sit on the product or on the variant, declare it twice:</p>
+<pre><code class="language-toml">    [[extensions.targeting.metafields]]
+    namespace = &quot;custom&quot;
+    key = &quot;gift_note&quot;
+    owner_type = &quot;PRODUCT&quot;
+
+    [[extensions.targeting.metafields]]
+    namespace = &quot;custom&quot;
+    key = &quot;gift_note&quot;
+    owner_type = &quot;PRODUCTVARIANT&quot;
+</code></pre>
+<p>Then decide in code which one wins. I let the variant override the product.</p>
+<h2 id="does-the-extension-code-change">Does the extension code change?</h2>
+<p>Not for reading. Each entry from <code>useAppMetafields</code> (or <code>shopify.appMetafields</code>) already has a <code>target</code> with a <code>type</code> and an <code>id</code>, so you filter on it. On the line item target, <code>shopify.target.value.merchandise.id</code> is the variant ID:</p>
+<pre><code class="language-jsx">import '@shopify/ui-extensions/preact';
+import {render} from 'preact';
+import {useAppMetafields} from '@shopify/ui-extensions/checkout/preact';
+
+export default function extension() {
+  render(&lt;LineNote /&gt;, document.body);
+}
+
+function LineNote() {
+  const variantId = shopify.target.value.merchandise.id;
+
+  const [variantNote] = useAppMetafields({
+    namespace: 'custom',
+    key: 'gift_note',
+    type: 'variant',
+  }).filter((entry) =&gt; entry.target.id === variantId);
+
+  if (!variantNote) return null;
+
+  return &lt;s-text&gt;{variantNote.metafield.value}&lt;/s-text&gt;;
+}
+</code></pre>
+<p>The filter type is lower case (<code>variant</code>, <code>product</code>), while <code>owner_type</code> in the TOML is upper case (<code>PRODUCTVARIANT</code>, <code>PRODUCT</code>). That mismatch is easy to get wrong.</p>
+<h2 id="how-do-i-find-declarations-that-are-missing-it">How do I find declarations that are missing it?</h2>
+<p>I don't trust myself to read every TOML by eye on an app with several extensions. This script (Python 3.11 or later, no dependencies) lists every metafield declaration without <code>owner_type</code> and exits with code 1 if it finds one:</p>
+<pre><code class="language-python">import sys, tomllib, pathlib
+
+root = pathlib.Path(sys.argv[1] if len(sys.argv) &gt; 1 else &quot;.&quot;)
+missing = 0
+for path in root.glob(&quot;extensions/*/shopify.extension.toml&quot;):
+    data = tomllib.loads(path.read_text())
+    for ext in data.get(&quot;extensions&quot;, []):
+        decls = list(ext.get(&quot;metafields&quot;, []))
+        for t in ext.get(&quot;targeting&quot;, []):
+            decls += t.get(&quot;metafields&quot;, [])
+        for m in decls:
+            if &quot;owner_type&quot; not in m:
+                missing += 1
+                print(f&quot;{path}: {m['namespace']}.{m['key']} has no owner_type&quot;
+                      f&quot; (api_version {data.get('api_version')})&quot;)
+sys.exit(1 if missing else 0)
+</code></pre>
+<p>Run it from the app root: <code>python3 check_owner_type.py .</code></p>
+<p>Output looks like this:</p>
+<pre><code>extensions/checkout-notes/shopify.extension.toml: custom.gift_note has no owner_type (api_version 2026-10)
+extensions/account-tier/shopify.extension.toml: $app:loyalty.tier has no owner_type (api_version 2026-07)
+</code></pre>
+<p>Because it exits with 1, you can add it to CI next to your lint step. Then nobody bumps an extension to 2027-01 without the field.</p>
+<h2 id="what-should-i-capture-to-confirm-it-worked">What should I capture to confirm it worked?</h2>
+<p>If you hand this to a client or a team lead, these screenshots are enough:</p>
+<ol>
+<li>The terminal output of <code>shopify app deploy</code> on 2026-10 with no metafield validation errors.</li>
+<li>The checker script with exit code 0.</li>
+<li>Checkout in a dev store with a product that has the metafield set. The note sits under the line item.</li>
+<li>The same checkout with a product where the metafield is empty. No empty box appears.</li>
+</ol>
+<h2 id="when-should-i-do-this">When should I do this?</h2>
+<p>Now, while it is optional. The upgrade to 2027-01 will come with other changes, and you don't want a deploy blocked by a missing field while you are fixing something else. On the stores I work on, I add it as part of the 2026-10 bump, and I've added a rule to my own checklist: no new metafield declaration without <code>owner_type</code>.</p>
+<p>Source: the Shopify developer changelog entry of 8 October 2026 and the "Using metafields for custom data in checkout" docs on shopify.dev.</p>
+</div> <!-- author-box:start --><aside class="mt-14 border-t border-ploy-border-primary/50 pt-8"><p class="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-ploy-text-secondary/70">Written by</p><p class="mt-3 font-heading text-2xl text-ploy-text-primary">Marin Gerov</p><p class="mt-2 max-w-xl leading-relaxed text-ploy-text-secondary">Independent Shopify and Shopify Plus developer in Amsterdam. Works with premium, design-led brands on product pages, checkout flows and store architecture, mostly through referrals.</p><div class="mt-4 flex flex-wrap items-center gap-5 font-mono text-[0.7rem] uppercase tracking-[0.16em]"><a href="/shopify-plus-developer-amsterdam" class="text-ploy-accent-primary transition-opacity hover:opacity-80">About</a><a href="https://x.com/maringerov" rel="me noopener" class="text-ploy-accent-primary transition-opacity hover:opacity-80">X</a><a href="https://www.linkedin.com/in/maringerov" rel="me noopener" class="text-ploy-accent-primary transition-opacity hover:opacity-80">LinkedIn</a></div></aside><!-- author-box:end --> <ul class="mt-14 flex flex-wrap gap-2 border-t border-ploy-border-primary/50 pt-8"><li> <a href="/tag/shopify" class="inline-block border border-ploy-border-primary/60 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ploy-text-secondary transition-colors hover:border-ploy-accent-primary/60 hover:text-ploy-accent-primary"> shopify </a> </li>
+<li> <a href="/tag/changelog" class="inline-block border border-ploy-border-primary/60 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ploy-text-secondary transition-colors hover:border-ploy-accent-primary/60 hover:text-ploy-accent-primary"> changelog </a> </li>
+<li> <a href="/tag/checkout-extensibility" class="inline-block border border-ploy-border-primary/60 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ploy-text-secondary transition-colors hover:border-ploy-accent-primary/60 hover:text-ploy-accent-primary"> checkout-extensibility </a> </li>
+<li> <a href="/tag/metafields" class="inline-block border border-ploy-border-primary/60 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ploy-text-secondary transition-colors hover:border-ploy-accent-primary/60 hover:text-ploy-accent-primary"> metafields </a> </li>
+<li> <a href="/tag/ui-extensions" class="inline-block border border-ploy-border-primary/60 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-ploy-text-secondary transition-colors hover:border-ploy-accent-primary/60 hover:text-ploy-accent-primary"> ui-extensions </a> </li>
+</ul>  </div> </article>  </main> <astro-island uid="20KcGN" prefix="r6" component-url="/_ploy_static/_astro/site-footer.DULiVXzC.js" component-export="SiteFooter" renderer-url="/_ploy_static/_astro/client.CXJcWBxe.js" props="{}" ssr client="load" opts="{&quot;name&quot;:&quot;SiteFooter&quot;,&quot;value&quot;:true}" await-children><footer class="border-t border-ploy-border-primary/60 bg-ploy-background-primary/80 backdrop-blur-sm"><div class="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20"><div class="grid gap-12 md:grid-cols-2 lg:grid-cols-4"><div class="lg:col-span-2"><p class="font-heading text-3xl tracking-tight text-ploy-text-primary">Soulstone</p><p class="mt-4 max-w-sm text-ploy-text-secondary">Turning attention into revenue for premium brands.</p><a href="mailto:marin@soulstone.co" class="mt-6 inline-block font-mono text-sm uppercase tracking-[0.14em] text-ploy-accent-primary transition-opacity hover:opacity-80">marin@soulstone.co</a></div><div><p class="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-ploy-text-secondary/70">Work</p><ul class="mt-5 space-y-3"><li><a href="/shopify-plus-architecture" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Shopify Plus architecture</a></li><li><a href="/results" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Results</a></li><li><a href="/blog" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Blog</a></li><li><a href="/faq" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">FAQ</a></li><li><a href="/#approach" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Approach</a></li></ul></div><div><p class="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-ploy-text-secondary/70">Studio</p><ul class="mt-5 space-y-3"><li><a href="/#clients" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Clients</a></li><li><a href="/#engagements" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Engagements</a></li><li><a href="#contact" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Book a teardown</a></li><li><a href="https://x.com/maringerov" rel="me noopener" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">X</a></li><li><a href="https://www.linkedin.com/in/maringerov" rel="me noopener" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">LinkedIn</a></li></ul></div></div><div class="mt-16 flex flex-col gap-2 border-t border-ploy-border-primary/40 pt-8 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ploy-text-secondary/60 sm:flex-row sm:items-center sm:justify-between"><span>© <!-- -->2026<!-- --> Soulstone. Shopify &amp; Shopify Plus</span><span>Amsterdam · Working with brands worldwide</span></div></div></footer><!--astro:end--></astro-island> </div>  </body></html>

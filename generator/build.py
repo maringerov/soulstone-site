@@ -1,0 +1,684 @@
+#!/usr/bin/env python3
+"""Soulstone blog generator.
+
+Sources
+  posts/*.md            Markdown posts with front matter (title, description,
+                        date, tags, optional slug, updated, draft).
+  blog/<slug>/index.html  Legacy posts that have no Markdown source. They are
+                        parsed for metadata and kept as they are, apart from
+                        the author box and the shared head block.
+  generator/site.json   Site, author, profile and business configuration.
+  generator/templates/  HTML templates cut from the Ploy export.
+
+Outputs (generator-owned, never hand edit)
+  blog/<slug>/index.html for every Markdown post
+  blog/index.html, tag/<tag>/index.html
+  sitemap-0.xml, sitemap-index.xml, rss.xml
+  the shared head block (og:image, twitter card, RSS link, ProfessionalService
+  and Person JSON-LD) on every HTML page
+
+Rules enforced
+  * Em dashes and en dashes fail the build. Checked in every Markdown source,
+    every template, site.json, every page rendered from Markdown and every
+    legacy HTML post. generator/lint.py extends the check to all shipped HTML
+    and JS.
+  * /blog appears once in the sitemap, every URL carries lastmod, and tag
+    pages with fewer than min_tag_posts_in_sitemap posts are left out (and
+    marked noindex).
+
+Usage
+  python3 generator/build.py              build in place
+  python3 generator/build.py --check      build into a scratch copy and fail
+                                          if the committed output differs
+  python3 generator/build.py --include-drafts
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import difflib
+import html
+import json
+import re
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+
+import markdown
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent
+DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
+AUTHOR_BOX_START = "<!-- author-box:start -->"
+AUTHOR_BOX_END = "<!-- author-box:end -->"
+HEAD_START = "<!-- soulstone-head:start -->"
+HEAD_END = "<!-- soulstone-head:end -->"
+TAGS_UL = '<ul class="mt-14 flex flex-wrap gap-2'
+MD_EXTENSIONS = ["tables", "fenced_code", "toc"]
+
+
+class BuildError(Exception):
+    pass
+
+
+# ----------------------------------------------------------------- helpers
+def esc(s: str) -> str:
+    return html.escape(s, quote=True)
+
+
+def nice_date(iso: str) -> str:
+    return dt.date.fromisoformat(iso).strftime("%B %-d, %Y")
+
+
+def iso_z(iso: str) -> str:
+    return f"{iso}T00:00:00.000Z"
+
+
+def rfc822(iso: str) -> str:
+    return dt.date.fromisoformat(iso).strftime("%a, %d %b %Y 00:00:00 +0000")
+
+
+def slugify(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+
+def ld_dump(obj) -> str:
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+
+def check_dashes(text: str, where: str) -> None:
+    for n, line in enumerate(text.splitlines(), 1):
+        for ch, name in DASHES.items():
+            if ch in line:
+                col = line.index(ch) + 1
+                raise BuildError(f"{where}:{n}:{col}: {name} found, use a comma, colon or full stop instead")
+
+
+def render(tpl: str, **values: str) -> str:
+    out = tpl
+    for k, v in values.items():
+        out = out.replace("{{" + k + "}}", v)
+    left = re.findall(r"\{\{[a-z_]+\}\}", out)
+    if left:
+        raise BuildError(f"unfilled template placeholders: {sorted(set(left))}")
+    return out
+
+
+def is_placeholder(value: str) -> bool:
+    return value.strip().upper().startswith("PLACEHOLDER")
+
+
+# ------------------------------------------------------------------ config
+class Site:
+    def __init__(self, root: Path):
+        self.root = root
+        cfg_path = root / "generator" / "site.json"
+        raw = cfg_path.read_text(encoding="utf-8")
+        check_dashes(raw, str(cfg_path.relative_to(root)))
+        self.cfg = json.loads(raw)
+        self.origin = self.cfg["origin"].rstrip("/")
+        self.templates = {}
+        for p in sorted((root / "generator" / "templates").glob("*.html")):
+            text = p.read_text(encoding="utf-8")
+            check_dashes(text, str(p.relative_to(root)))
+            self.templates[p.stem] = text
+
+    def url(self, path: str) -> str:
+        return self.origin + ("" if path == "/" else path)
+
+    def abs_url(self, path_or_url: str) -> str:
+        return path_or_url if path_or_url.startswith("http") else self.url(path_or_url)
+
+    # ---- JSON-LD entities shared by every page
+    def business_id(self) -> str:
+        return self.origin + "/" + self.cfg["business"]["id"]
+
+    def person_id(self) -> str:
+        return self.origin + "/" + self.cfg["author"]["id"]
+
+    def same_as(self, keys) -> list[str]:
+        return [self.cfg["profiles"][k] for k in keys if k in self.cfg["profiles"]]
+
+    def business_node(self) -> dict:
+        b = self.cfg["business"]
+        a = self.cfg["author"]
+        node = {
+            "@type": "ProfessionalService",
+            "@id": self.business_id(),
+            "name": b["name"],
+            "url": self.origin,
+            "email": a["email"],
+            "description": b["description"],
+            "slogan": b["slogan"],
+            "image": self.abs_url(self.cfg["og_image"]),
+            "logo": self.abs_url(self.cfg["og_image"]),
+            "founder": {"@id": self.person_id()},
+            "address": {"@type": "PostalAddress", **b["address"]},
+            "areaServed": b["area_served"],
+            "serviceType": b["service_types"],
+            "knowsAbout": b["knows_about"],
+            "contactPoint": {"@type": "ContactPoint", "email": a["email"], "contactType": "sales"},
+            "sameAs": self.same_as(["linkedin_company", "x", "shopify_partner"]),
+            "potentialAction": {
+                "@type": "ReserveAction",
+                "name": "Book a 30-minute store teardown",
+                "target": self.cfg["profiles"]["booking"],
+            },
+        }
+        return node
+
+    def person_node(self) -> dict:
+        a = self.cfg["author"]
+        return {
+            "@type": "Person",
+            "@id": self.person_id(),
+            "name": a["name"],
+            "jobTitle": a["job_title"],
+            "description": a["bio"],
+            "email": a["email"],
+            "url": self.url(a["page"]),
+            "worksFor": {"@id": self.business_id()},
+            "address": {"@type": "PostalAddress", **self.cfg["business"]["address"]},
+            "knowsAbout": self.cfg["business"]["knows_about"],
+            "sameAs": self.same_as(["linkedin", "x"]),
+        }
+
+    def service_nodes(self) -> list[dict]:
+        return [
+            {
+                "@type": "Service",
+                "@id": self.url(s["url"]),
+                "name": s["name"],
+                "serviceType": s["name"],
+                "description": s["description"],
+                "url": self.url(s["url"]),
+                "provider": {"@id": self.business_id()},
+                "areaServed": self.cfg["business"]["area_served"],
+                "audience": {"@type": "Audience", "audienceType": "Premium and design-led direct-to-consumer brands"},
+            }
+            for s in self.cfg["services"]
+        ]
+
+    def website_node(self) -> dict:
+        return {"@type": "WebSite", "name": self.cfg["site_name"], "url": self.origin, "publisher": {"@id": self.business_id()}}
+
+    def placeholders(self) -> list[str]:
+        return [f"profiles.{k}" for k, v in self.cfg["profiles"].items() if is_placeholder(v)]
+
+    # ---- author box
+    def author_box(self) -> str:
+        a = self.cfg["author"]
+        link_cls = "text-ploy-accent-primary transition-opacity hover:opacity-80"
+        links = [f'<a href="{a["page"]}" class="{link_cls}">About</a>']
+        for key, label in (("x", "X"), ("linkedin", "LinkedIn")):
+            url = self.cfg["profiles"].get(key, "")
+            if url and not is_placeholder(url):
+                links.append(f'<a href="{esc(url)}" rel="me noopener" class="{link_cls}">{label}</a>')
+        return (
+            f"{AUTHOR_BOX_START}"
+            '<aside class="mt-14 border-t border-ploy-border-primary/50 pt-8">'
+            '<p class="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-ploy-text-secondary/70">Written by</p>'
+            f'<p class="mt-3 font-heading text-2xl text-ploy-text-primary">{esc(a["name"])}</p>'
+            f'<p class="mt-2 max-w-xl leading-relaxed text-ploy-text-secondary">{esc(a["bio"])}</p>'
+            '<div class="mt-4 flex flex-wrap items-center gap-5 font-mono text-[0.7rem] uppercase tracking-[0.16em]">'
+            + "".join(links)
+            + f"</div></aside>{AUTHOR_BOX_END}"
+        )
+
+
+# ------------------------------------------------------------------- posts
+def parse_front_matter(text: str, where: str) -> tuple[dict, str]:
+    m = re.match(r"^---\r?\n(.*?)\r?\n---\r?\n(.*)$", text, re.S)
+    if not m:
+        raise BuildError(f"{where}: missing front matter")
+    meta: dict = {}
+    for line in m.group(1).splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if ":" not in line:
+            raise BuildError(f"{where}: bad front matter line {line!r}")
+        k, v = line.split(":", 1)
+        k, v = k.strip(), v.strip()
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+            v = v[1:-1]
+        if k == "tags":
+            meta[k] = [t.strip().strip("\"'") for t in v.strip("[]").split(",") if t.strip()]
+        else:
+            meta[k] = v
+    return meta, m.group(2)
+
+
+def load_markdown_posts(site: Site, posts_dir: Path, include_drafts: bool) -> list[dict]:
+    posts = []
+    for f in sorted(posts_dir.glob("*.md")):
+        where = str(f.relative_to(site.root))
+        text = f.read_text(encoding="utf-8")
+        check_dashes(text, where)
+        meta, body = parse_front_matter(text, where)
+        for key in ("title", "description", "date"):
+            if not meta.get(key):
+                raise BuildError(f"{where}: front matter needs {key}")
+        for key in ("date", "updated"):
+            if meta.get(key):
+                try:
+                    dt.date.fromisoformat(meta[key])
+                except ValueError:
+                    raise BuildError(f"{where}: {key} must be YYYY-MM-DD") from None
+        if str(meta.get("draft", "false")).lower() == "true" and not include_drafts:
+            print(f"skip draft {where}")
+            continue
+        if re.search(r"^##\s+X draft", body, re.M):
+            raise BuildError(f"{where}: remove the '## X draft' section before publishing")
+        slug = meta.get("slug") or slugify(meta["title"])
+        if slug != slugify(slug):
+            raise BuildError(f"{where}: slug {slug!r} is not url safe")
+        body_html = markdown.markdown(body, extensions=MD_EXTENSIONS, output_format="html5")
+        posts.append(
+            dict(
+                slug=slug,
+                title=meta["title"],
+                description=meta["description"],
+                date=meta["date"],
+                updated=meta.get("updated") or meta["date"],
+                tags=[slugify(t) for t in meta.get("tags", [])],
+                body_html=body_html,
+                source=where,
+            )
+        )
+    slugs = [p["slug"] for p in posts]
+    dupes = {s for s in slugs if slugs.count(s) > 1}
+    if dupes:
+        raise BuildError(f"duplicate slugs: {sorted(dupes)}")
+    return posts
+
+
+def parse_legacy_posts(site: Site, skip: set[str]) -> list[dict]:
+    posts = []
+    for f in sorted((site.root / "blog").glob("*/index.html")):
+        slug = f.parent.name
+        if slug in skip:
+            continue
+        h = f.read_text(encoding="utf-8")
+        art = None
+        for raw in re.findall(r'<script type="application/ld\+json">(.*?)</script>', h, re.S):
+            data = json.loads(raw)
+            nodes = data.get("@graph", [data])
+            art = next((n for n in nodes if n.get("@type") == "Article"), art)
+        if not art:
+            raise BuildError(f"blog/{slug}/index.html: no Article JSON-LD, cannot read post metadata")
+        tail = h.split(TAGS_UL, 1)[-1]
+        tags = re.findall(r'<a href="/tag/([^"]+)"', tail.split("</ul>", 1)[0])
+        posts.append(
+            dict(
+                slug=slug,
+                title=art["headline"],
+                description=art["description"],
+                date=art["datePublished"][:10],
+                updated=art.get("dateModified", art["datePublished"])[:10],
+                tags=tags,
+                body_html=None,
+                source=f"blog/{slug}/index.html",
+            )
+        )
+    return posts
+
+
+# --------------------------------------------------------------- rendering
+def post_jsonld(site: Site, p: dict) -> str:
+    url = site.url(f"/blog/{p['slug']}")
+    graph = [
+        site.business_node(),
+        site.person_node(),
+        site.website_node(),
+        {
+            "@type": "Article",
+            "@id": url + "#article",
+            "headline": p["title"],
+            "description": p["description"],
+            "image": site.abs_url(site.cfg["og_image"]),
+            "datePublished": iso_z(p["date"]),
+            "dateModified": iso_z(p["updated"]),
+            "author": {"@id": site.person_id()},
+            "publisher": {"@id": site.business_id()},
+            "keywords": ", ".join(p["tags"]),
+            "url": url,
+            "mainEntityOfPage": url,
+        },
+        {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Blog", "item": site.url("/blog")},
+                {"@type": "ListItem", "position": 2, "name": p["title"], "item": url},
+            ],
+        },
+    ]
+    return ld_dump({"@context": "https://schema.org", "@graph": graph})
+
+
+def render_post(site: Site, p: dict) -> str:
+    chips = "".join(render(site.templates["tag-chip"], tag=esc(t)) for t in p["tags"])
+    return render(
+        site.templates["post"],
+        title_tag=esc(f"{p['title']} | {site.cfg['site_name']}"),
+        title=esc(p["title"]),
+        description=esc(p["description"]),
+        url=site.url(f"/blog/{p['slug']}"),
+        date_iso=iso_z(p["date"]),
+        date_nice=nice_date(p["date"]),
+        body=p["body_html"],
+        tags=chips,
+        author_box=site.author_box(),
+        jsonld=post_jsonld(site, p),
+    )
+
+
+def upsert_author_box(site: Site, h: str, where: str) -> str:
+    box = site.author_box()
+    if AUTHOR_BOX_START in h:
+        return re.sub(re.escape(AUTHOR_BOX_START) + ".*?" + re.escape(AUTHOR_BOX_END), lambda _: box, h, 1, re.S)
+    i = h.find(TAGS_UL)
+    if i < 0:
+        raise BuildError(f"{where}: tag list not found, cannot place author box")
+    return h[:i] + box + " " + h[i:]
+
+
+def page_jsonld(site: Site, name: str, description: str, url: str, extra: list[dict] | None = None) -> str:
+    graph = [site.business_node(), site.person_node(), site.website_node(),
+             {"@type": "WebPage", "name": name, "description": description, "url": url}]
+    return ld_dump({"@context": "https://schema.org", "@graph": graph + (extra or [])})
+
+
+def render_blog_index(site: Site, posts: list[dict]) -> str:
+    cards = "".join(
+        render(
+            site.templates["blog-card"],
+            slug=p["slug"],
+            index=f"{i:02d}",
+            title=esc(p["title"]),
+            description=esc(p["description"]),
+            date_iso=iso_z(p["date"]),
+            date_nice=nice_date(p["date"]),
+        )
+        for i, p in enumerate(posts, 1)
+    )
+    tpl = site.templates["blog-index"]
+    title = re.search(r"<title>(.*?)</title>", tpl, re.S).group(1)
+    desc = re.search(r'<meta name="description" content="([^"]*)"', tpl).group(1)
+    blog_node = {
+        "@type": "Blog",
+        "@id": site.url("/blog") + "#blog",
+        "name": site.cfg["feed"]["title"],
+        "url": site.url("/blog"),
+        "author": {"@id": site.person_id()},
+        "publisher": {"@id": site.business_id()},
+        "blogPost": [{"@id": site.url(f"/blog/{p['slug']}") + "#article"} for p in posts],
+    }
+    return render(tpl, cards=cards, jsonld=page_jsonld(site, html.unescape(title), html.unescape(desc), site.url("/blog"), [blog_node]))
+
+
+def render_tag_page(site: Site, tag: str, posts: list[dict], indexable: bool) -> str:
+    items = "".join(
+        render(
+            site.templates["tag-item"],
+            slug=p["slug"],
+            title=esc(p["title"]),
+            description=esc(p["description"]),
+            date_iso=iso_z(p["date"]),
+            date_nice=nice_date(p["date"]),
+        )
+        for p in posts
+    )
+    author = site.cfg["author"]["name"]
+    title = f"Posts on {tag}: Shopify Plus notes by {author} | {site.cfg['site_name']}"
+    n = len(posts)
+    description = (
+        f"{n} {'post' if n == 1 else 'posts'} tagged {tag} in the Soulstone Journal. "
+        f"Notes on Shopify Plus conversion, architecture and product data by {author}, an independent Shopify Plus developer in Amsterdam."
+    )
+    intro = f'<p class="mt-7 max-w-xl text-lg leading-relaxed text-ploy-text-secondary">{esc(description)}</p>'
+    return render(
+        site.templates["tag"],
+        tag=esc(tag),
+        title_tag=esc(title),
+        description=esc(description),
+        items=items,
+        intro=intro,
+        robots="index, follow" if indexable else "noindex, follow",
+        jsonld=page_jsonld(site, title, description, site.url(f"/tag/{tag}")),
+    )
+
+
+def render_sitemap(site: Site, posts: list[dict], tags: dict[str, list[dict]], indexable_tags: list[str]) -> str:
+    newest = max(p["updated"] for p in posts) if posts else dt.date.today().isoformat()
+    entries: dict[str, str] = {}
+    for sp in site.cfg["static_pages"]:
+        entries[site.url(sp["path"])] = sp["lastmod"]
+    entries[site.url("/blog")] = newest
+    for p in posts:
+        entries[site.url(f"/blog/{p['slug']}")] = p["updated"]
+    for t in indexable_tags:
+        entries[site.url(f"/tag/{t}")] = max(p["updated"] for p in tags[t])
+    rows = "".join(f"<url><loc>{esc(u)}</loc><lastmod>{d}</lastmod></url>" for u, d in entries.items())
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + rows + "</urlset>\n"
+    )
+
+
+def render_sitemap_index(site: Site) -> str:
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"<sitemap><loc>{site.url('/sitemap-0.xml')}</loc></sitemap></sitemapindex>\n"
+    )
+
+
+def render_rss(site: Site, posts: list[dict]) -> str:
+    feed = site.cfg["feed"]
+    author = site.cfg["author"]["name"]
+    items = []
+    for p in posts:
+        url = site.url(f"/blog/{p['slug']}")
+        cats = "".join(f"<category>{esc(t)}</category>" for t in p["tags"])
+        items.append(
+            "<item>"
+            f"<title>{esc(p['title'])}</title>"
+            f"<link>{url}</link>"
+            f'<guid isPermaLink="true">{url}</guid>'
+            f"<pubDate>{rfc822(p['date'])}</pubDate>"
+            f"<dc:creator>{esc(author)}</dc:creator>"
+            f"<description>{esc(p['description'])}</description>"
+            f"{cats}</item>"
+        )
+    newest = max(p["date"] for p in posts) if posts else dt.date.today().isoformat()
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">'
+        "<channel>"
+        f"<title>{esc(feed['title'])}</title>"
+        f"<link>{site.url('/blog')}</link>"
+        f"<description>{esc(feed['description'])}</description>"
+        "<language>en</language>"
+        f"<lastBuildDate>{rfc822(newest)}</lastBuildDate>"
+        f'<atom:link href="{site.url(feed["path"])}" rel="self" type="application/rss+xml"/>'
+        f"<image><url>{site.abs_url(site.cfg['og_image'])}</url><title>{esc(feed['title'])}</title><link>{site.url('/blog')}</link></image>"
+        + "".join(items)
+        + "</channel></rss>\n"
+    )
+
+
+# -------------------------------------------------------- shared head pass
+def head_block(site: Site) -> str:
+    img = site.abs_url(site.cfg["og_image"])
+    feed = site.cfg["feed"]
+    return (
+        f"{HEAD_START}"
+        f'<meta property="og:image" content="{img}"/>'
+        '<meta property="og:image:width" content="1200"/>'
+        '<meta property="og:image:height" content="630"/>'
+        f'<meta property="og:image:alt" content="{esc(site.cfg["og_image_alt"])}"/>'
+        '<meta name="twitter:card" content="summary_large_image"/>'
+        f'<meta name="twitter:image" content="{img}"/>'
+        f'<link rel="alternate" type="application/rss+xml" title="{esc(feed["title"])}" href="{feed["path"]}"/>'
+        f"{HEAD_END}"
+    )
+
+
+def apply_head(site: Site, h: str, where: str) -> str:
+    """Idempotently add the shared meta block and entity JSON-LD to a page."""
+    h = re.sub(re.escape(HEAD_START) + ".*?" + re.escape(HEAD_END), "", h, flags=re.S)
+    h = re.sub(r'<meta (?:property="og:image(?::[a-z]+)?"|name="twitter:(?:card|image)") content="[^"]*"\s*/?>', "", h)
+    h = re.sub(r'<link rel="alternate" type="application/rss\+xml"[^>]*>', "", h)
+    m = re.search(r'<meta property="og:url" content="[^"]*"\s*/?>', h)
+    if not m:
+        raise BuildError(f"{where}: no og:url meta, cannot place head block")
+    h = h[: m.end()] + head_block(site) + h[m.end():]
+
+    canonical = re.search(r'<link rel="canonical" href="([^"]*)"', h)
+    path = canonical.group(1).replace(site.origin, "") or "/" if canonical else None
+
+    m = re.search(r'<script type="application/ld\+json">(.*?)</script>', h, re.S)
+    if not m:
+        raise BuildError(f"{where}: no JSON-LD graph in head")
+    data = json.loads(m.group(1))
+    graph = data.get("@graph")
+    if graph is None:
+        raise BuildError(f"{where}: head JSON-LD has no @graph")
+    keep = []
+    for n in graph:
+        t = n.get("@type")
+        if t in ("Organization", "ProfessionalService", "Person"):
+            continue
+        if t == "Service" and n.get("@id", "").startswith(site.origin) and n["@id"] in {s["@id"] for s in site.service_nodes()}:
+            continue
+        if t == "WebSite":
+            n = site.website_node()
+        if t == "Article":
+            n["author"] = {"@id": site.person_id()}
+            n["publisher"] = {"@id": site.business_id()}
+            n.setdefault("image", site.abs_url(site.cfg["og_image"]))
+        if t == "Service":
+            n["provider"] = {"@id": site.business_id()}
+        keep.append(n)
+    graph = [site.business_node(), site.person_node()] + keep
+    if path in site.cfg["service_nodes_on"]:
+        graph += site.service_nodes()
+    data["@graph"] = graph
+    return h[: m.start(1)] + ld_dump(data) + h[m.end(1):]
+
+
+# ------------------------------------------------------------------- build
+def build(root: Path, include_drafts: bool) -> dict:
+    site = Site(root)
+    md_posts = load_markdown_posts(site, root / "posts", include_drafts)
+    legacy = parse_legacy_posts(site, {p["slug"] for p in md_posts})
+    posts = sorted(md_posts + legacy, key=lambda p: (p["date"], p["slug"]), reverse=True)
+    written: list[Path] = []
+
+    def write(rel: str, text: str) -> None:
+        out = root / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        if not out.exists() or out.read_text(encoding="utf-8") != text:
+            out.write_text(text, encoding="utf-8")
+        written.append(out)
+
+    for p in md_posts:
+        rel = f"blog/{p['slug']}/index.html"
+        page = render_post(site, p)
+        check_dashes(page, rel)
+        write(rel, page)
+        print(f"post   {rel}  <- {p['source']}")
+    for p in legacy:
+        rel = p["source"]
+        page = upsert_author_box(site, (root / rel).read_text(encoding="utf-8"), rel)
+        check_dashes(page, rel)
+        write(rel, page)
+        print(f"legacy {rel}  (author box refreshed, content kept)")
+
+    write("blog/index.html", render_blog_index(site, posts))
+
+    tags: dict[str, list[dict]] = {}
+    for p in posts:
+        for t in p["tags"]:
+            tags.setdefault(t, []).append(p)
+    min_posts = int(site.cfg["min_tag_posts_in_sitemap"])
+    indexable = sorted(t for t, ps in tags.items() if len(ps) >= min_posts)
+    for t in sorted(tags):
+        write(f"tag/{t}/index.html", render_tag_page(site, t, tags[t], t in indexable))
+    for stale in (root / "tag").glob("*/index.html"):
+        if stale.parent.name not in tags:
+            shutil.rmtree(stale.parent)
+            print(f"removed stale tag page tag/{stale.parent.name}")
+
+    write("sitemap-0.xml", render_sitemap(site, posts, tags, indexable))
+    write("sitemap-index.xml", render_sitemap_index(site))
+    write(site.cfg["feed"]["path"].lstrip("/"), render_rss(site, posts))
+
+    pages = sorted(p for p in root.glob("**/index.html") if "_ploy_static" not in p.parts and ".git" not in p.parts)
+    for page in pages:
+        rel = str(page.relative_to(root))
+        write(rel, apply_head(site, page.read_text(encoding="utf-8"), rel))
+
+    print(
+        f"\n{len(posts)} posts ({len(md_posts)} from Markdown, {len(legacy)} legacy), "
+        f"{len(tags)} tags ({len(indexable)} in sitemap), head block on {len(pages)} pages"
+    )
+    thin = sorted(set(tags) - set(indexable))
+    if thin:
+        print(f"thin tag pages left out of sitemap and set to noindex: {', '.join(thin)}")
+    ph = site.placeholders()
+    if ph:
+        print(f"WARNING: placeholders still in generator/site.json: {', '.join(ph)}")
+    return {"written": written, "placeholders": ph}
+
+
+def check(root: Path, include_drafts: bool) -> int:
+    with tempfile.TemporaryDirectory() as tmp:
+        scratch = Path(tmp) / "site"
+        shutil.copytree(root, scratch, ignore=shutil.ignore_patterns(".git"))
+        info = build(scratch, include_drafts)
+        bad = []
+        for out in info["written"]:
+            rel = out.relative_to(scratch)
+            committed = root / rel
+            if not committed.exists():
+                bad.append((rel, "missing in repo"))
+                continue
+            a = committed.read_text(encoding="utf-8")
+            b = out.read_text(encoding="utf-8")
+            if a != b:
+                diff = "".join(difflib.unified_diff(a.splitlines(True), b.splitlines(True), f"repo/{rel}", f"build/{rel}", n=1))
+                bad.append((rel, diff[:4000]))
+        # tag pages that the build removed must not exist in the repo either
+        for stale in (root / "tag").glob("*/index.html"):
+            if not (scratch / stale.relative_to(root)).exists():
+                bad.append((stale.relative_to(root), "stale tag page, run the build"))
+    if bad:
+        print("\nBUILD OUTPUT IS OUT OF DATE. Run: python3 generator/build.py\n", file=sys.stderr)
+        for rel, why in bad:
+            print(f"--- {rel}\n{why}\n", file=sys.stderr)
+        return 1
+    print("\ncheck ok: committed output matches a fresh build")
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--site", default=str(REPO), help="site root (default: repository root)")
+    ap.add_argument("--include-drafts", action="store_true")
+    ap.add_argument("--check", action="store_true", help="fail if committed output differs from a fresh build")
+    a = ap.parse_args()
+    root = Path(a.site).resolve()
+    try:
+        if a.check:
+            return check(root, a.include_drafts)
+        build(root, a.include_drafts)
+        return 0
+    except BuildError as e:
+        print(f"\nBUILD FAILED: {e}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
