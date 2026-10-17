@@ -14,8 +14,8 @@ Outputs (generator-owned, never hand edit)
   blog/<slug>/index.html for every Markdown post
   blog/index.html, tag/<tag>/index.html
   sitemap-0.xml, sitemap-index.xml, rss.xml
-  the shared head block (og:image, twitter card, RSS link, ProfessionalService
-  and Person JSON-LD) on every HTML page
+  the shared head block (og:image, twitter card, RSS link, mobile navigation
+  styles and script, ProfessionalService and Person JSON-LD) on every HTML page
 
 Rules enforced
   * Em dashes and en dashes fail the build. Checked in every Markdown source,
@@ -54,6 +54,56 @@ AUTHOR_BOX_START = "<!-- author-box:start -->"
 AUTHOR_BOX_END = "<!-- author-box:end -->"
 HEAD_START = "<!-- soulstone-head:start -->"
 HEAD_END = "<!-- soulstone-head:end -->"
+
+# Mobile navigation. The markup (toggle button and #site-menu panel) lives in the
+# header of every page and in the SiteHeader bundle so hydration keeps it. The
+# styles, the no-JS fallback and the toggle script ship in the shared head block.
+# Below 64rem (Tailwind lg) the desktop nav is hidden and the toggle shows; at
+# 64rem and up both the toggle and the panel are hidden. The compiled Tailwind
+# CSS has no lg:flex utility, so the desktop nav carries .ss-nav-desktop and is
+# shown from here.
+NAV_CSS = (
+    ".ss-nav-actions{display:flex;align-items:center;gap:1rem}"
+    ".ss-nav-toggle{display:inline-flex;align-items:center;gap:.5rem;height:2.5rem;margin:0 -.5rem 0 0;padding:0 .5rem;"
+    "border:0;border-radius:var(--radius-button);background:transparent;color:var(--ploy-text-primary);"
+    "font-family:var(--font-mono);font-size:.7rem;font-weight:500;line-height:1;letter-spacing:.18em;text-transform:uppercase;"
+    "cursor:pointer;-webkit-tap-highlight-color:transparent}"
+    ".ss-nav-toggle:focus-visible{outline:2px solid var(--ploy-accent-primary);outline-offset:2px}"
+    ".ss-nav-toggle svg{display:block;width:1.25rem;height:1.25rem}"
+    ".ss-nav-toggle[aria-expanded=true] .ss-nav-icon-menu,.ss-nav-toggle[aria-expanded=false] .ss-nav-icon-close{display:none}"
+    ".ss-nav-panel{display:none;border-top:1px solid var(--ploy-border-primary);border-bottom:1px solid var(--ploy-border-primary);"
+    "background:var(--ploy-background-primary);max-height:calc(100vh - 5rem);max-height:calc(100dvh - 5rem);overflow-y:auto}"
+    "header:has(.ss-nav-panel[data-state=open]){background:var(--ploy-background-primary);border-color:var(--ploy-border-primary)}"
+    ".ss-nav-panel .ss-nav-inner{padding-top:.5rem;padding-bottom:1.5rem}"
+    ".ss-nav-panel ul{list-style:none;margin:0;padding:0}"
+    ".ss-nav-panel li+li{border-top:1px solid var(--ploy-border-primary)}"
+    ".ss-nav-panel .ss-nav-link{display:block;padding:1rem 0;font-size:.8rem}"
+    ".ss-nav-panel .ss-nav-link:focus-visible{outline:2px solid var(--ploy-accent-primary);outline-offset:2px}"
+    ".ss-nav-panel .ss-nav-cta{margin-top:1rem;width:100%}"
+    "@media (max-width:63.9375rem){.ss-nav-panel[data-state=open]{display:block}}"
+    "@media (min-width:40rem){.ss-nav-panel .ss-nav-cta{display:none}}"
+    "@media (min-width:64rem){.ss-nav-toggle,.ss-nav-panel{display:none}header nav.ss-nav-desktop{display:flex}}"
+)
+NAV_NOSCRIPT_CSS = (
+    ".ss-nav-toggle{display:none}"
+    "@media (max-width:63.9375rem){header.fixed:has(.ss-nav-panel){position:static}"
+    ".ss-nav-panel{display:block}.ss-nav-panel ul{display:flex;flex-wrap:wrap;gap:0 1.5rem}"
+    ".ss-nav-panel li+li{border-top:0}.ss-nav-panel .ss-nav-link{padding:.5rem 0}}"
+)
+NAV_JS = (
+    "(function(){if(window.__ssNav)return;window.__ssNav=1;"
+    'var d=document,T=\'[aria-controls="site-menu"]\';'
+    'function panel(){return d.getElementById("site-menu")}'
+    "function toggle(){return d.querySelector(T)}"
+    'function isOpen(){var p=panel();return!!p&&p.getAttribute("data-state")==="open"}'
+    'function set(open){var p=panel(),t=toggle();if(!p||!t)return;p.setAttribute("data-state",open?"open":"closed");t.setAttribute("aria-expanded",open?"true":"false")}'
+    'd.addEventListener("click",function(e){var el=e.target;if(!el||!el.closest)return;'
+    "if(el.closest(T)){set(!isOpen());return}"
+    'if(isOpen()&&(el.closest("#site-menu a")||!el.closest("#site-menu")))set(false)});'
+    'd.addEventListener("keydown",function(e){if(e.key==="Escape"&&isOpen()){set(false);var t=toggle();if(t)t.focus()}})'
+    "})();"
+)
+NAV_HEAD = f"<style>{NAV_CSS}</style><noscript><style>{NAV_NOSCRIPT_CSS}</style></noscript><script>{NAV_JS}</script>"
 TAGS_UL = '<ul class="mt-14 flex flex-wrap gap-2'
 MD_EXTENSIONS = ["tables", "fenced_code", "toc"]
 
@@ -521,6 +571,7 @@ def head_block(site: Site) -> str:
         '<meta name="twitter:card" content="summary_large_image"/>'
         f'<meta name="twitter:image" content="{img}"/>'
         f'<link rel="alternate" type="application/rss+xml" title="{esc(feed["title"])}" href="{feed["path"]}"/>'
+        f"{NAV_HEAD}"
         f"{HEAD_END}"
     )
 

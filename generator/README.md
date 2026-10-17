@@ -50,7 +50,7 @@ both places but not text drift between them.
 | `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` |
-| the shared head block on every page | `generator/site.json` (og:image, twitter card, RSS link, ProfessionalService and Person JSON-LD) |
+| the shared head block on every page | `generator/site.json` (og:image, twitter card, RSS link, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
 | the author box on every post | `author` and `profiles` in `site.json` |
 
 The five posts that predate the generator have no Markdown source. They are
@@ -59,6 +59,23 @@ the shared head block. Edit their body copy directly in `blog/<slug>/index.html`
 
 Tag pages with fewer than `min_tag_posts_in_sitemap` posts stay online but
 are left out of the sitemap and marked `noindex, follow`.
+
+## Site header and mobile menu
+
+The header markup is not generated. It lives in every static page, in the
+three page templates and in the React island
+`_ploy_static/_astro/site-header.HZhl7zMm.js`, which renders the same tree on
+hydration. Change all three together or the header reverts on load.
+
+Below 64rem (Tailwind `lg`) the desktop links are hidden and a `Menu` button
+(`.ss-nav-toggle`, `aria-expanded`, `aria-controls="site-menu"`) opens the
+`#site-menu` panel. The build writes the styles, a `<noscript>` fallback that
+shows the links inline, and a short vanilla script into the shared head block.
+The script only toggles `data-state` on the panel and `aria-expanded` on the
+button (click, Enter and Space via the native button, Escape closes and
+returns focus, a tap on a link or outside the panel closes). React does not own
+that state, so hydration and the scroll re-render leave it alone. The lint
+fails if a page lacks the toggle, the panel or the script.
 
 ## Checks
 
