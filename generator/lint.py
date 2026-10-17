@@ -7,7 +7,8 @@ Fails on
     workflows, llms.txt and robots.txt
   * sitemap and RSS that are not well-formed XML
   * JSON-LD on any page that does not parse
-  * pages missing og:image, a large twitter card or the RSS link
+  * pages missing og:image, a large twitter card, the RSS link or the mobile
+    menu (toggle button, #site-menu panel and the toggle script)
   * leftover {{placeholders}} from the templates
 Prints a warning for configuration values still marked PLACEHOLDER.
 """
@@ -64,7 +65,10 @@ def main() -> int:
         if not desc:
             errors.append(f"{rel}: no meta description")
         for attr, label in [('property="og:image"', "og:image"), ('name="twitter:card" content="summary_large_image"', "twitter large card"),
-                            ('type="application/rss+xml"', "RSS link")]:
+                            ('type="application/rss+xml"', "RSS link"),
+                            ('<button type="button" class="ss-nav-toggle" aria-expanded="false" aria-controls="site-menu">', "mobile menu toggle"),
+                            ('<nav id="site-menu" class="ss-nav-panel" data-state="closed"', "mobile menu panel"),
+                            ("window.__ssNav", "mobile menu script")]:
             if attr not in h:
                 errors.append(f"{rel}: missing {label}")
         for raw in re.findall(r'<script type="application/ld\+json">(.*?)</script>', h, re.S):
