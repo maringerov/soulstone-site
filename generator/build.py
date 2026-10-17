@@ -19,8 +19,9 @@ Outputs (generator-owned, never hand edit)
 
 Rules enforced
   * Em dashes and en dashes fail the build. Checked in every Markdown source,
-    every template, site.json and every page rendered from Markdown. Legacy
-    HTML posts predate the rule and are left untouched.
+    every template, site.json, every page rendered from Markdown and every
+    legacy HTML post. generator/lint.py extends the check to all shipped HTML
+    and JS.
   * /blog appears once in the sitemap, every URL carries lastmod, and tag
     pages with fewer than min_tag_posts_in_sitemap posts are left out (and
     marked noindex).
@@ -591,6 +592,7 @@ def build(root: Path, include_drafts: bool) -> dict:
     for p in legacy:
         rel = p["source"]
         page = upsert_author_box(site, (root / rel).read_text(encoding="utf-8"), rel)
+        check_dashes(page, rel)
         write(rel, page)
         print(f"legacy {rel}  (author box refreshed, content kept)")
 

@@ -2,9 +2,9 @@
 """Site lint, run in CI after generator/build.py --check.
 
 Fails on
-  * em or en dashes in Markdown posts, generator files, llms.txt, robots.txt,
-    the hand-maintained landing page, and in the <title> and meta description
-    of every page (legacy post bodies predate the rule and are not scanned)
+  * em or en dashes anywhere in shipped HTML, JS and text: every *.html page,
+    every bundle under _ploy_static/_astro, Markdown posts, generator files,
+    workflows, llms.txt and robots.txt
   * sitemap and RSS that are not well-formed XML
   * JSON-LD on any page that does not parse
   * pages missing og:image, a large twitter card or the RSS link
@@ -21,11 +21,19 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
-DASH_SCAN = ["posts", "generator", "llms.txt", "robots.txt", "shopify-plus-developer-amsterdam", ".github"]
+TEXT_SUFFIXES = {".html", ".js", ".css", ".md", ".txt", ".xml", ".json", ".yml", ".yaml", ".py"}
+SKIP_PARTS = {".git", "__pycache__", "node_modules"}
 
 
 def pages() -> list[Path]:
     return sorted(p for p in REPO.glob("**/index.html") if "_ploy_static" not in p.parts and ".git" not in p.parts)
+
+
+def shipped_text_files() -> list[Path]:
+    return sorted(
+        p for p in REPO.rglob("*")
+        if p.is_file() and p.suffix in TEXT_SUFFIXES and not SKIP_PARTS & set(p.parts)
+    )
 
 
 def main() -> int:
@@ -39,13 +47,9 @@ def main() -> int:
                 if ch in line:
                     errors.append(f"{where}:{n}: {name}")
 
-    for entry in DASH_SCAN:
-        path = REPO / entry
-        files = [path] if path.is_file() else sorted(p for p in path.rglob("*") if p.is_file())
-        for f in files:
-            if f.suffix in {".jpg", ".png", ".webp", ".ico", ".woff2"}:
-                continue
-            dashes(f.read_text(encoding="utf-8"), str(f.relative_to(REPO)))
+    scanned = shipped_text_files()
+    for f in scanned:
+        dashes(f.read_text(encoding="utf-8"), str(f.relative_to(REPO)))
 
     for page in pages():
         rel = str(page.relative_to(REPO))
@@ -55,13 +59,10 @@ def main() -> int:
         if not title:
             errors.append(f"{rel}: no <title>")
         else:
-            dashes(title.group(1), f"{rel} <title>")
             if title.group(1).count("| Soulstone") > 1:
                 errors.append(f"{rel}: doubled brand in title: {title.group(1)!r}")
         if not desc:
             errors.append(f"{rel}: no meta description")
-        else:
-            dashes(desc.group(1), f"{rel} meta description")
         for attr, label in [('property="og:image"', "og:image"), ('name="twitter:card" content="summary_large_image"', "twitter large card"),
                             ('type="application/rss+xml"', "RSS link")]:
             if attr not in h:
@@ -103,7 +104,7 @@ def main() -> int:
             print(f"error: {e}", file=sys.stderr)
         print(f"\n{len(errors)} lint error(s)", file=sys.stderr)
         return 1
-    print(f"lint ok: {len(pages())} pages checked")
+    print(f"lint ok: {len(pages())} pages checked, {len(scanned)} files scanned for dashes")
     return 0
 
 
