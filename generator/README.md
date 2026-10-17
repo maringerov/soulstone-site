@@ -1,8 +1,15 @@
 # Blog generator
 
-Static site, deployed from `main` by GitHub Pages. The generator turns
-Markdown posts into pages that match the Ploy export and rebuilds everything
-that depends on the list of posts.
+Static site, deployed from `main` by GitHub Pages. This repository is the
+source of truth: all page copy lives in the committed HTML and in the compiled
+bundles under `_ploy_static/_astro/*.js`. The generator turns Markdown posts
+into pages that match the existing design and rebuilds everything that depends
+on the list of posts.
+
+Editing a static page (`/`, `/faq`, `/results`, `/shopify-plus-architecture`):
+change the text in both the page HTML and the matching bundle, or the copy
+reverts when the React island hydrates. `generator/lint.py` catches dashes in
+both places but not text drift between them.
 
 ## Writing a post
 
@@ -31,8 +38,10 @@ that depends on the list of posts.
    python3 generator/build.py
    ```
 
-3. The build fails if any Markdown post, template or `site.json` contains an
-   em dash or an en dash. Use a comma, colon or full stop.
+3. The build fails if any Markdown post, template, `site.json` or legacy post
+   contains an em dash or an en dash. Use a comma, colon or full stop.
+   `generator/lint.py` applies the same rule to every shipped `.html`, `.js`,
+   `.css`, `.md`, `.txt`, `.xml`, `.json`, `.yml` and `.py` file.
 
 ## What the build writes
 
@@ -46,7 +55,7 @@ that depends on the list of posts.
 
 The five posts that predate the generator have no Markdown source. They are
 read for their metadata and kept as they are, apart from the author box and
-the shared head block.
+the shared head block. Edit their body copy directly in `blog/<slug>/index.html`.
 
 Tag pages with fewer than `min_tag_posts_in_sitemap` posts stay online but
 are left out of the sitemap and marked `noindex, follow`.
@@ -55,7 +64,7 @@ are left out of the sitemap and marked `noindex, follow`.
 
 ```sh
 python3 generator/build.py --check   # committed output matches a fresh build
-python3 generator/lint.py            # dashes, titles, meta, JSON-LD, sitemap, RSS
+python3 generator/lint.py            # dashes in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS
 ```
 
 Both run in `.github/workflows/build.yml` on every push and pull request.
@@ -68,9 +77,7 @@ and the lint prints a warning for them. The landing page
 `/shopify-plus-developer-amsterdam` carries a visible pricing placeholder for
 the same reason.
 
-## Ploy sync
+## Ploy sync (retired)
 
-`scripts/sync_from_ploy.py` refuses to write anything under `blog/`, `tag/`,
-the sitemaps, `rss.xml`, `robots.txt`, `llms.txt`, `assets/`, `generator/`,
-`posts/` or the landing page, and runs the generator after a sync so the
-shared head block is re-applied to the refreshed pages.
+`scripts/sync_from_ploy.py` is a no-op that exits with a message. The Ploy
+preview is no longer synced; the repository is the source of truth.
