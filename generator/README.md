@@ -41,7 +41,8 @@ both places but not text drift between them.
 3. The build fails if any Markdown post, template, `site.json` or legacy post
    contains an em dash or an en dash. Use a comma, colon or full stop.
    `generator/lint.py` applies the same rule to every shipped `.html`, `.js`,
-   `.css`, `.md`, `.txt`, `.xml`, `.json`, `.yml` and `.py` file.
+   `.css`, `.md`, `.txt`, `.xml`, `.json`, `.yml`, `.py`, `.svg` and
+   `.webmanifest` file.
 
 ## What the build writes
 
@@ -50,8 +51,31 @@ both places but not text drift between them.
 | `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` |
-| the shared head block on every page | `generator/site.json` (og:image, twitter card, RSS link, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
+| `site.webmanifest` | `site_name`, `business.description` and `icons` in `site.json` plus `MANIFEST_ICONS` in `build.py` |
+| the shared head block on every page | `generator/site.json` (og:image, twitter card, RSS link, favicon and app icon links, manifest, theme-color, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
 | the author box on every post | `author` and `profiles` in `site.json` |
+
+## Favicon and app icons
+
+The mark is an S monogram drawn as vector paths (no font reference) in the
+site's accent green `#59EC85` (`--ploy-accent-primary`) on a rounded square in
+the page background `#080F0C` (`--ploy-background-primary`), so it reads on
+light and dark browser tabs. The files live at the repository root and are
+plain assets, not build output:
+
+| File | Use |
+|---|---|
+| `favicon.svg` | modern browsers, `rel="icon"` with `type="image/svg+xml"` |
+| `favicon.ico` | 16, 32 and 48 px fallback |
+| `apple-touch-icon.png` | 180 px, full-bleed background (iOS applies its own mask) |
+| `icon-192.png`, `icon-512.png` | manifest icons, rounded square with transparent corners |
+| `icon-192-maskable.png`, `icon-512-maskable.png` | manifest `purpose: maskable`, mark kept inside the safe zone |
+
+The build writes the link tags, `theme-color` and `site.webmanifest`, and
+strips the Ploy starter `<link rel="icon" type="image/x-icon">` from every
+page. `theme_color`, `background_color` and `short_name` come from `icons`
+in `site.json`. The lint fails if a page lacks the icon links or a referenced
+icon file is missing.
 
 The five posts that predate the generator have no Markdown source. They are
 read for their metadata and kept as they are, apart from the author box and

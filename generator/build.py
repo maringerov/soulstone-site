@@ -13,9 +13,14 @@ Sources
 Outputs (generator-owned, never hand edit)
   blog/<slug>/index.html for every Markdown post
   blog/index.html, tag/<tag>/index.html
-  sitemap-0.xml, sitemap-index.xml, rss.xml
-  the shared head block (og:image, twitter card, RSS link, mobile navigation
-  styles and script, ProfessionalService and Person JSON-LD) on every HTML page
+  sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest
+  the shared head block (og:image, twitter card, RSS link, favicon and app
+  icon links, web app manifest, theme-color, mobile navigation styles and
+  script, ProfessionalService and Person JSON-LD) on every HTML page
+
+The icon files themselves (favicon.svg, favicon.ico, apple-touch-icon.png,
+icon-192.png, icon-512.png and the maskable variants) are committed assets at
+the repository root; the build only links them.
 
 Rules enforced
   * Em dashes and en dashes fail the build. Checked in every Markdown source,
@@ -104,6 +109,22 @@ NAV_JS = (
     "})();"
 )
 NAV_HEAD = f"<style>{NAV_CSS}</style><noscript><style>{NAV_NOSCRIPT_CSS}</style></noscript><script>{NAV_JS}</script>"
+# Favicon and app icons. The SVG carries a solid rounded-square background so
+# the mark reads on light and dark browser tabs; the ICO is the fallback for
+# browsers without SVG favicon support and Safari uses the apple-touch-icon.
+ICON_LINKS = (
+    '<link rel="icon" href="/favicon.ico" sizes="48x48"/>'
+    '<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>'
+    '<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"/>'
+    '<link rel="manifest" href="/site.webmanifest"/>'
+)
+MANIFEST_ICONS = [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+    {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"},
+]
 TAGS_UL = '<ul class="mt-14 flex flex-wrap gap-2'
 MD_EXTENSIONS = ["tables", "fenced_code", "toc"]
 
@@ -571,9 +592,27 @@ def head_block(site: Site) -> str:
         '<meta name="twitter:card" content="summary_large_image"/>'
         f'<meta name="twitter:image" content="{img}"/>'
         f'<link rel="alternate" type="application/rss+xml" title="{esc(feed["title"])}" href="{feed["path"]}"/>'
+        f"{ICON_LINKS}"
+        f'<meta name="theme-color" content="{esc(site.cfg["icons"]["theme_color"])}"/>'
         f"{NAV_HEAD}"
         f"{HEAD_END}"
     )
+
+
+def render_manifest(site: Site) -> str:
+    icons = site.cfg["icons"]
+    manifest = {
+        "name": site.cfg["site_name"],
+        "short_name": icons["short_name"],
+        "description": site.cfg["business"]["description"],
+        "start_url": "/",
+        "scope": "/",
+        "display": "browser",
+        "background_color": icons["background_color"],
+        "theme_color": icons["theme_color"],
+        "icons": MANIFEST_ICONS,
+    }
+    return json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
 
 
 def apply_head(site: Site, h: str, where: str) -> str:
@@ -581,6 +620,9 @@ def apply_head(site: Site, h: str, where: str) -> str:
     h = re.sub(re.escape(HEAD_START) + ".*?" + re.escape(HEAD_END), "", h, flags=re.S)
     h = re.sub(r'<meta (?:property="og:image(?::[a-z]+)?"|name="twitter:(?:card|image)") content="[^"]*"\s*/?>', "", h)
     h = re.sub(r'<link rel="alternate" type="application/rss\+xml"[^>]*>', "", h)
+    # drop the Ploy starter favicon and any stale icon tags; the head block owns them
+    h = re.sub(r'<link rel="(?:icon|shortcut icon|apple-touch-icon|manifest|mask-icon)"[^>]*>', "", h)
+    h = re.sub(r'<meta name="theme-color"[^>]*>', "", h)
     m = re.search(r'<meta property="og:url" content="[^"]*"\s*/?>', h)
     if not m:
         raise BuildError(f"{where}: no og:url meta, cannot place head block")
@@ -665,6 +707,7 @@ def build(root: Path, include_drafts: bool) -> dict:
     write("sitemap-0.xml", render_sitemap(site, posts, tags, indexable))
     write("sitemap-index.xml", render_sitemap_index(site))
     write(site.cfg["feed"]["path"].lstrip("/"), render_rss(site, posts))
+    write("site.webmanifest", render_manifest(site))
 
     pages = sorted(p for p in root.glob("**/index.html") if "_ploy_static" not in p.parts and ".git" not in p.parts)
     for page in pages:
