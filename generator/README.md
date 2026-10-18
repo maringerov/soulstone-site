@@ -49,11 +49,41 @@ both places but not text drift between them.
 | Output | Source |
 |---|---|
 | `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html` |
+| `<path>/index.html` (for example `privacy/index.html`) | `pages/*.md` and `generator/templates/page.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
-| `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` |
+| `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
 | `site.webmanifest` | `site_name`, `business.description` and `icons` in `site.json` plus `MANIFEST_ICONS` in `build.py` |
 | the shared head block on every page | `generator/site.json` (og:image, twitter card, RSS link, favicon and app icon links, manifest, theme-color, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
+| the analytics block on every page | `analytics.ga4_measurement_id` in `site.json` plus the consent bar styles and script (`CONSENT_CSS`, `CONSENT_JS` in `build.py`) |
 | the author box on every post | `author` and `profiles` in `site.json` |
+
+## Static pages in Markdown
+
+`pages/<name>.md` renders to `<path>/index.html` through
+`generator/templates/page.html`. Front matter needs `title`, `description`,
+`path` (for example `/privacy`) and `lastmod` (used in the sitemap); `eyebrow`
+is optional. The body is Markdown and may contain inline HTML. The only page so
+far is `pages/privacy.md`.
+
+## Analytics and cookie consent
+
+The build writes a second shared block, `<!-- soulstone-analytics:start -->` to
+`<!-- soulstone-analytics:end -->`, right after the viewport meta on every page.
+It holds the GA4 tag (`G-9HHW5MMJCP`, from `analytics.ga4_measurement_id` in
+`site.json`) with a Consent Mode default that denies analytics storage, ad
+storage, ad user data and ad personalisation, followed by the consent bar styles
+and script. Only `analytics_storage` is ever granted; the ad signals stay denied.
+
+The choice lives in `localStorage` under `ss_consent` (`granted` or `denied`).
+On load the GA snippet grants analytics storage if the value is `granted`. The
+consent script creates the bar (`#ss-consent`, `role="region"`, two buttons,
+a link to `/privacy`) only when no choice is stored, sets
+`--ss-consent-h` and `html.ss-consent-open` so the body gets bottom padding and
+the mobile menu panel stays clear of the bar, and removes it once a button is
+pressed. Any element with `data-ss-consent-reset` (the "Change cookie choice"
+link on `/privacy`) clears the stored value, sets analytics storage back to
+denied and shows the bar again. With JavaScript off there is no bar and the tag
+never loads.
 
 ## Favicon and app icons
 
@@ -101,11 +131,20 @@ returns focus, a tap on a link or outside the panel closes). React does not own
 that state, so hydration and the scroll re-render leave it alone. The lint
 fails if a page lacks the toggle, the panel or the script.
 
+## Site footer
+
+The footer markup is not generated either. It lives in every static page, in
+the page templates and in the React island
+`_ploy_static/_astro/site-footer.DULiVXzC.js`. Change the HTML and the bundle
+together (the `Privacy` link in the Studio column is an example) or hydration
+replaces the footer with the bundle's version. The lint fails if a page has no
+footer link to `/privacy`.
+
 ## Checks
 
 ```sh
 python3 generator/build.py --check   # committed output matches a fresh build
-python3 generator/lint.py            # dashes in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS
+python3 generator/lint.py            # dashes in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS, GA4 tag, consent script, privacy link
 ```
 
 Both run in `.github/workflows/build.yml` on every push and pull request.
