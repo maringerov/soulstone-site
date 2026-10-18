@@ -6,7 +6,8 @@
   "icons": {
     "theme_color": "#080F0C",
     "background_color": "#080F0C",
-    "short_name": "Soulstone"
+    "short_name": "Soulstone",
+    "logo": "/icon-512.png"
   },
   "feed": {
     "path": "/rss.xml",

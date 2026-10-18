@@ -284,7 +284,7 @@ class Site:
             "description": b["description"],
             "slogan": b["slogan"],
             "image": self.abs_url(self.cfg["og_image"]),
-            "logo": self.abs_url(self.cfg["og_image"]),
+            "logo": self.abs_url(self.cfg["icons"]["logo"]),
             "founder": {"@id": self.person_id()},
             "address": {"@type": "PostalAddress", **b["address"]},
             "areaServed": b["area_served"],
