@@ -103,9 +103,18 @@ plain assets, not build output:
 
 The build writes the link tags, `theme-color` and `site.webmanifest`, and
 strips the Ploy starter `<link rel="icon" type="image/x-icon">` from every
-page. `theme_color`, `background_color` and `short_name` come from `icons`
+page. `theme_color`, `background_color`, `short_name` and `logo` (the
+ProfessionalService `logo` in the JSON-LD, `/icon-512.png`) come from `icons`
 in `site.json`. The lint fails if a page lacks the icon links or a referenced
 icon file is missing.
+
+To regenerate the icon files after changing the mark, colours or sizes:
+
+```sh
+pip install -r generator/requirements-icons.txt
+python3 generator/icons.py            # writes the icon files to the repository root
+python3 generator/icons.py --previews /tmp/previews   # also favicon-512.png and favicon-sizes.png
+```
 
 The five posts that predate the generator have no Markdown source. They are
 read for their metadata and kept as they are, apart from the author box and
