@@ -3,6 +3,12 @@
   "site_name": "Soulstone",
   "og_image": "/assets/og-default.jpg",
   "og_image_alt": "Soulstone: freelance Shopify Plus developer and conversion specialist in Amsterdam",
+  "icons": {
+    "theme_color": "#080F0C",
+    "background_color": "#080F0C",
+    "short_name": "Soulstone",
+    "logo": "/icon-512.png"
+  },
   "feed": {
     "path": "/rss.xml",
     "title": "The Soulstone Journal",

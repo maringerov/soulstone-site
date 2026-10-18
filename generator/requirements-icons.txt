@@ -1,0 +1,3 @@
+# Only needed to regenerate the favicon set with generator/icons.py.
+Pillow>=10,<14
+CairoSVG>=2.7,<3

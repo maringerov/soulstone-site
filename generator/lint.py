@@ -7,10 +7,13 @@ Fails on
     workflows, llms.txt and robots.txt
   * sitemap and RSS that are not well-formed XML
   * JSON-LD on any page that does not parse
-  * pages missing og:image, a large twitter card, the RSS link, the mobile
-    menu (toggle button, #site-menu panel and the toggle script), the GA4 tag
-    with its denied consent default, the cookie consent script or the footer
-    link to /privacy
+  * pages missing og:image, a large twitter card, the RSS link, the favicon
+    links (SVG, ICO fallback, apple-touch-icon, manifest, theme-color), the
+    mobile menu (toggle button, #site-menu panel and the toggle script), the
+    GA4 tag with its denied consent default, the cookie consent script or the
+    footer link to /privacy
+  * a leftover Ploy starter favicon link (type="image/x-icon")
+  * icon files referenced from the head or site.webmanifest that do not exist
   * leftover {{placeholders}} from the templates
   * the Google Search Console verification file changed, gained a trailing
     newline or ended up in the sitemap
@@ -26,7 +29,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
-TEXT_SUFFIXES = {".html", ".js", ".css", ".md", ".txt", ".xml", ".json", ".yml", ".yaml", ".py"}
+TEXT_SUFFIXES = {".html", ".js", ".css", ".md", ".txt", ".xml", ".json", ".yml", ".yaml", ".py", ".svg", ".webmanifest"}
 SKIP_PARTS = {".git", "__pycache__", "node_modules"}
 # Google serves this back byte for byte; it is not a page and never gets a
 # head block, a trailing newline or a sitemap entry.
@@ -74,6 +77,11 @@ def main() -> int:
             errors.append(f"{rel}: no meta description")
         for attr, label in [('property="og:image"', "og:image"), ('name="twitter:card" content="summary_large_image"', "twitter large card"),
                             ('type="application/rss+xml"', "RSS link"),
+                            ('<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>', "SVG favicon"),
+                            ('<link rel="icon" href="/favicon.ico" sizes="48x48"/>', "ICO favicon fallback"),
+                            ('<link rel="apple-touch-icon" href="/apple-touch-icon.png"', "apple-touch-icon"),
+                            ('<link rel="manifest" href="/site.webmanifest"/>', "web app manifest"),
+                            ('<meta name="theme-color" content="', "theme-color"),
                             ('<button type="button" class="ss-nav-toggle" aria-expanded="false" aria-controls="site-menu">', "mobile menu toggle"),
                             ('<nav id="site-menu" class="ss-nav-panel" data-state="closed"', "mobile menu panel"),
                             ("window.__ssNav", "mobile menu script"),
@@ -88,6 +96,8 @@ def main() -> int:
                 json.loads(raw)
             except json.JSONDecodeError as e:
                 errors.append(f"{rel}: JSON-LD does not parse: {e}")
+        if 'type="image/x-icon"' in h:
+            errors.append(f"{rel}: old Ploy favicon link still present")
         if re.search(r"\{\{[a-z_]+\}\}", h):
             errors.append(f"{rel}: unfilled template placeholder")
         for m in re.finditer(r"PLACEHOLDER[^<\"]*", h):
@@ -107,6 +117,22 @@ def main() -> int:
         errors.append("sitemap-0.xml: every <url> needs a <lastmod>")
     if any(GOOGLE_VERIFICATION in loc for loc in locs):
         errors.append(f"sitemap-0.xml: {GOOGLE_VERIFICATION} must not be listed")
+
+    icon_files = {"favicon.svg", "favicon.ico", "apple-touch-icon.png"}
+    try:
+        manifest = json.loads((REPO / "site.webmanifest").read_text(encoding="utf-8"))
+        for key in ("name", "short_name", "theme_color", "background_color", "icons"):
+            if not manifest.get(key):
+                errors.append(f"site.webmanifest: missing {key}")
+        for icon in manifest.get("icons", []):
+            icon_files.add(icon["src"].lstrip("/"))
+        if not any(i.get("purpose") == "maskable" for i in manifest.get("icons", [])):
+            errors.append("site.webmanifest: no maskable icon")
+    except (json.JSONDecodeError, FileNotFoundError, KeyError, TypeError) as e:
+        errors.append(f"site.webmanifest: {e}")
+    for name in sorted(icon_files):
+        if not (REPO / name).is_file():
+            errors.append(f"{name}: icon file missing")
 
     verification = REPO / GOOGLE_VERIFICATION
     if not verification.is_file():
