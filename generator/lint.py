@@ -10,6 +10,8 @@ Fails on
   * pages missing og:image, a large twitter card, the RSS link or the mobile
     menu (toggle button, #site-menu panel and the toggle script)
   * leftover {{placeholders}} from the templates
+  * the Google Search Console verification file changed, gained a trailing
+    newline or ended up in the sitemap
 Prints a warning for configuration values still marked PLACEHOLDER.
 """
 from __future__ import annotations
@@ -24,6 +26,10 @@ REPO = Path(__file__).resolve().parent.parent
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
 TEXT_SUFFIXES = {".html", ".js", ".css", ".md", ".txt", ".xml", ".json", ".yml", ".yaml", ".py"}
 SKIP_PARTS = {".git", "__pycache__", "node_modules"}
+# Google serves this back byte for byte; it is not a page and never gets a
+# head block, a trailing newline or a sitemap entry.
+GOOGLE_VERIFICATION = "googlef0ef0874c5fa4c80.html"
+GOOGLE_VERIFICATION_BODY = b"google-site-verification: googlef0ef0874c5fa4c80.html"
 
 
 def pages() -> list[Path]:
@@ -93,6 +99,14 @@ def main() -> int:
         errors.append("sitemap-0.xml: duplicate <loc> entries")
     if sitemap.count("<url>") != sitemap.count("<lastmod>"):
         errors.append("sitemap-0.xml: every <url> needs a <lastmod>")
+    if any(GOOGLE_VERIFICATION in loc for loc in locs):
+        errors.append(f"sitemap-0.xml: {GOOGLE_VERIFICATION} must not be listed")
+
+    verification = REPO / GOOGLE_VERIFICATION
+    if not verification.is_file():
+        errors.append(f"{GOOGLE_VERIFICATION}: missing")
+    elif verification.read_bytes() != GOOGLE_VERIFICATION_BODY:
+        errors.append(f"{GOOGLE_VERIFICATION}: content changed (expected the exact token, no trailing newline)")
 
     cfg = json.loads((REPO / "generator" / "site.json").read_text(encoding="utf-8"))
     for k, v in cfg.get("profiles", {}).items():
