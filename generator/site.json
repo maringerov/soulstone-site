@@ -64,6 +64,7 @@
     }
   ],
   "service_nodes_on": ["/", "/shopify-plus-developer-amsterdam"],
+  "analytics": { "ga4_measurement_id": "G-9HHW5MMJCP" },
   "static_pages": [
     { "path": "/", "lastmod": "2026-10-16" },
     { "path": "/shopify-plus-developer-amsterdam", "lastmod": "2026-10-16" },

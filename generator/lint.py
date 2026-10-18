@@ -7,8 +7,10 @@ Fails on
     workflows, llms.txt and robots.txt
   * sitemap and RSS that are not well-formed XML
   * JSON-LD on any page that does not parse
-  * pages missing og:image, a large twitter card, the RSS link or the mobile
-    menu (toggle button, #site-menu panel and the toggle script)
+  * pages missing og:image, a large twitter card, the RSS link, the mobile
+    menu (toggle button, #site-menu panel and the toggle script), the GA4 tag
+    with its denied consent default, the cookie consent script or the footer
+    link to /privacy
   * leftover {{placeholders}} from the templates
   * the Google Search Console verification file changed, gained a trailing
     newline or ended up in the sitemap
@@ -74,7 +76,11 @@ def main() -> int:
                             ('type="application/rss+xml"', "RSS link"),
                             ('<button type="button" class="ss-nav-toggle" aria-expanded="false" aria-controls="site-menu">', "mobile menu toggle"),
                             ('<nav id="site-menu" class="ss-nav-panel" data-state="closed"', "mobile menu panel"),
-                            ("window.__ssNav", "mobile menu script")]:
+                            ("window.__ssNav", "mobile menu script"),
+                            ('<script async src="https://www.googletagmanager.com/gtag/js?id=G-', "GA4 tag"),
+                            ("gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'})", "GA4 consent default"),
+                            ("window.__ssConsent", "cookie consent script"),
+                            ('<a href="/privacy" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Privacy</a>', "footer privacy link")]:
             if attr not in h:
                 errors.append(f"{rel}: missing {label}")
         for raw in re.findall(r'<script type="application/ld\+json">(.*?)</script>', h, re.S):
