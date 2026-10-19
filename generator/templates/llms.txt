@@ -1,0 +1,19 @@
+# Soulstone
+
+> Soulstone is the Shopify and Shopify Plus practice of Marin Gerov, an independent developer and conversion specialist based in Amsterdam (Europe/Amsterdam timezone). He works with a small number of premium, design-led brands (watches, cars, crafts and other objects made with care), mostly through referrals. The work covers product pages, navigation and checkout flows, re-architecting overgrown Shopify Plus stores, checkout and customer account extensions, product data and integrations, and connecting marketing spend to on-site revenue.
+
+Contact: marin@soulstone.co. First step is a free 30-minute store teardown.
+Profiles: https://www.linkedin.com/in/maringerov, https://x.com/maringerov, https://www.linkedin.com/company/soulstone
+
+## Services
+- [Freelance Shopify Plus developer in Amsterdam]({{origin}}/shopify-plus-developer-amsterdam/): who the work is for, services, process and FAQ.
+- [Shopify Plus architecture]({{origin}}/shopify-plus-architecture/): re-architecting complex Plus setups, app consolidation, performance.
+- [Results]({{origin}}/results/): anonymised case study of a premium Shopify Plus rebuild.
+- [FAQ]({{origin}}/faq/): fit, engagement model, teardown, how lift is measured.
+
+## Journal
+{{journal}}
+- Feed: {{feed_url}}
+
+## Optional
+- [Sitemap]({{origin}}/sitemap-index.xml)

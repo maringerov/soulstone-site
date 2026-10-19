@@ -16,7 +16,7 @@ Outputs (generator-owned, never hand edit)
   blog/<slug>/index.html for every Markdown post
   <path>/index.html for every Markdown page
   blog/index.html, tag/<tag>/index.html
-  sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest
+  sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
   the shared head block (og:image, twitter card, RSS link, favicon and app
   icon links, web app manifest, theme-color, mobile navigation styles and
   script, ProfessionalService and Person JSON-LD) on every HTML page
@@ -35,6 +35,11 @@ Rules enforced
   * /blog appears once in the sitemap, every URL carries lastmod, and tag
     pages with fewer than min_tag_posts_in_sitemap posts are left out (and
     marked noindex).
+  * Page URLs end in a slash. GitHub Pages serves <dir>/index.html at <dir>/
+    and 301-redirects the slashless form, so every page's canonical and og:url
+    are set to its own trailing-slash URL, and internal hrefs, astro-island
+    header links and JSON-LD url/@id/item fields get the slash too (see
+    page_path). Files keep their extension, / stays /.
 
 Usage
   python3 generator/build.py              build in place
@@ -175,7 +180,7 @@ CONSENT_JS = (
     'b.innerHTML=\'<p class="ss-consent-text">We use analytics cookies to see how the site is used.</p>\''
     '+\'<div class="ss-consent-actions"><button type="button" class="ss-consent-btn" data-ss-consent="granted">Accept</button>\''
     '+\'<button type="button" class="ss-consent-btn" data-ss-consent="denied">Decline</button>\''
-    '+\'<a href="/privacy" class="ss-consent-link">Privacy</a></div>\';'
+    '+\'<a href="/privacy/" class="ss-consent-link">Privacy</a></div>\';'
     'd.body.appendChild(b);H.classList.add("ss-consent-open");size()}'
     'function choose(v){put(v);if(v==="granted")update("granted");hide()}'
     'd.addEventListener("click",function(e){var el=e.target;if(!el||!el.closest)return;'
@@ -241,6 +246,56 @@ def is_placeholder(value: str) -> bool:
     return value.strip().upper().startswith("PLACEHOLDER")
 
 
+# GitHub Pages serves <path>/index.html at <path>/ and 301-redirects the
+# slashless form, so the URL that answers 200 for every page ends in a slash.
+# Files keep their name (anything with an extension in the last segment) and a
+# fragment or query stays after the slash: /faq -> /faq/, /x#services ->
+# /x/#services, /rss.xml -> /rss.xml, / -> /.
+def page_path(path: str) -> str:
+    m = re.match(r"^([^#?]*)(.*)$", path)
+    base, suffix = m.group(1), m.group(2)
+    if not base:
+        base = "/"
+    elif not base.endswith("/") and "." not in base.rsplit("/", 1)[-1]:
+        base += "/"
+    return base + suffix
+
+
+def normalize_hrefs(h: str, origin: str) -> str:
+    """Give every internal page link in an HTML document its trailing slash.
+
+    Covers href="/path" and href="<origin>/path" attributes and the serialized
+    "href" props of astro-island header links. External links, files with an
+    extension and bare fragments are left as they are.
+    """
+    def attr(m: re.Match) -> str:
+        return f'{m.group(1)}"{m.group(2) or ""}{page_path(m.group(3))}"'
+
+    h = re.sub(rf'(\bhref=)"({re.escape(origin)})?(/[^"]*)"', attr, h)
+
+    def prop(m: re.Match) -> str:
+        return f"{m.group(1)}{page_path(m.group(2))}{m.group(3)}"
+
+    return re.sub(r"(&quot;href&quot;:\[0,&quot;)(/[^&]*)(&quot;\])", prop, h)
+
+
+def normalize_jsonld_urls(node, origin: str):
+    """Trailing slash on every URL-valued field under the site origin in a JSON-LD graph."""
+    url_keys = {"url", "@id", "item", "mainEntityOfPage", "target"}
+    if isinstance(node, list):
+        return [normalize_jsonld_urls(n, origin) for n in node]
+    if isinstance(node, dict):
+        out = {}
+        for k, v in node.items():
+            if k in url_keys and isinstance(v, str) and (v == origin or v.startswith(origin + "/")):
+                v = origin + page_path(v[len(origin):])
+            else:
+                v = normalize_jsonld_urls(v, origin)
+            out[k] = v
+        return out
+    return node
+
+
 # ------------------------------------------------------------------ config
 class Site:
     def __init__(self, root: Path):
@@ -251,13 +306,16 @@ class Site:
         self.cfg = json.loads(raw)
         self.origin = self.cfg["origin"].rstrip("/")
         self.templates = {}
-        for p in sorted((root / "generator" / "templates").glob("*.html")):
+        for p in sorted((root / "generator" / "templates").glob("*.*")):
             text = p.read_text(encoding="utf-8")
             check_dashes(text, str(p.relative_to(root)))
             self.templates[p.stem] = text
 
+    def path(self, path: str) -> str:
+        return page_path(path)
+
     def url(self, path: str) -> str:
-        return self.origin + ("" if path == "/" else path)
+        return self.origin + self.path(path)
 
     def abs_url(self, path_or_url: str) -> str:
         return path_or_url if path_or_url.startswith("http") else self.url(path_or_url)
@@ -283,7 +341,7 @@ class Site:
             "@type": "ProfessionalService",
             "@id": self.business_id(),
             "name": b["name"],
-            "url": self.origin,
+            "url": self.url("/"),
             "email": a["email"],
             "description": b["description"],
             "slogan": b["slogan"],
@@ -339,7 +397,7 @@ class Site:
         ]
 
     def website_node(self) -> dict:
-        return {"@type": "WebSite", "name": self.cfg["site_name"], "url": self.origin, "publisher": {"@id": self.business_id()}}
+        return {"@type": "WebSite", "name": self.cfg["site_name"], "url": self.url("/"), "publisher": {"@id": self.business_id()}}
 
     def placeholders(self) -> list[str]:
         return [f"profiles.{k}" for k, v in self.cfg["profiles"].items() if is_placeholder(v)]
@@ -348,7 +406,7 @@ class Site:
     def author_box(self) -> str:
         a = self.cfg["author"]
         link_cls = "text-ploy-accent-primary transition-opacity hover:opacity-80"
-        links = [f'<a href="{a["page"]}" class="{link_cls}">About</a>']
+        links = [f'<a href="{self.path(a["page"])}" class="{link_cls}">About</a>']
         for key, label in (("x", "X"), ("linkedin", "LinkedIn")):
             url = self.profile(key)
             if url:
@@ -482,7 +540,7 @@ def parse_legacy_posts(site: Site, skip: set[str]) -> list[dict]:
         if not art:
             raise BuildError(f"blog/{slug}/index.html: no Article JSON-LD, cannot read post metadata")
         tail = h.split(TAGS_UL, 1)[-1]
-        tags = re.findall(r'<a href="/tag/([^"]+)"', tail.split("</ul>", 1)[0])
+        tags = re.findall(r'<a href="/tag/([^"/]+)/?"', tail.split("</ul>", 1)[0])
         posts.append(
             dict(
                 slug=slug,
@@ -699,6 +757,20 @@ def render_rss(site: Site, posts: list[dict]) -> str:
     )
 
 
+def render_llms(site: Site, posts: list[dict]) -> str:
+    """llms.txt from templates/llms.txt; the Journal list comes from the posts."""
+    def entry(p: dict) -> str:
+        url = site.url("/blog/" + p["slug"])
+        return f"- [{p['title']}]({url}): {p['description']}"
+
+    return render(
+        site.templates["llms"],
+        origin=site.origin,
+        journal="\n".join(entry(p) for p in posts),
+        feed_url=site.url(site.cfg["feed"]["path"]),
+    )
+
+
 # -------------------------------------------------------- shared head pass
 def head_block(site: Site) -> str:
     img = site.abs_url(site.cfg["og_image"])
@@ -754,8 +826,25 @@ def analytics_block(site: Site) -> str:
     )
 
 
+def own_url(site: Site, where: str) -> str:
+    """The URL that serves <where> (a path like faq/index.html) with a 200."""
+    parent = str(Path(where).parent).replace("\\", "/")
+    return site.url("/" if parent == "." else f"/{parent}")
+
+
 def apply_head(site: Site, h: str, where: str) -> str:
-    """Idempotently add the shared meta block and entity JSON-LD to a page."""
+    """Idempotently add the shared meta block and entity JSON-LD to a page.
+
+    Also pins the canonical and og:url to the page's own trailing-slash URL
+    and gives every internal link and JSON-LD URL its trailing slash.
+    """
+    url = own_url(site, where)
+    h, n_canon = re.subn(r'(<link rel="canonical" href=")[^"]*(")', lambda m: m.group(1) + url + m.group(2), h, 1)
+    if not n_canon:
+        raise BuildError(f"{where}: no canonical link")
+    h = re.sub(r'(<meta property="og:url" content=")[^"]*(")', lambda m: m.group(1) + url + m.group(2), h, 1)
+    h = normalize_hrefs(h, site.origin)
+
     h = re.sub(re.escape(ANALYTICS_START) + ".*?" + re.escape(ANALYTICS_END), "", h, flags=re.S)
     m = re.search(r'<meta name="viewport" content="[^"]*"\s*/?>', h)
     if not m:
@@ -773,8 +862,7 @@ def apply_head(site: Site, h: str, where: str) -> str:
         raise BuildError(f"{where}: no og:url meta, cannot place head block")
     h = h[: m.end()] + head_block(site) + h[m.end():]
 
-    canonical = re.search(r'<link rel="canonical" href="([^"]*)"', h)
-    path = canonical.group(1).replace(site.origin, "") or "/" if canonical else None
+    path = site.path(url[len(site.origin):])
 
     m = re.search(r'<script type="application/ld\+json">(.*?)</script>', h, re.S)
     if not m:
@@ -784,7 +872,7 @@ def apply_head(site: Site, h: str, where: str) -> str:
     if graph is None:
         raise BuildError(f"{where}: head JSON-LD has no @graph")
     keep = []
-    for n in graph:
+    for n in normalize_jsonld_urls(graph, site.origin):
         t = n.get("@type")
         if t in ("Organization", "ProfessionalService", "Person"):
             continue
@@ -800,7 +888,7 @@ def apply_head(site: Site, h: str, where: str) -> str:
             n["provider"] = {"@id": site.business_id()}
         keep.append(n)
     graph = [site.business_node(), site.person_node()] + keep
-    if path in site.cfg["service_nodes_on"]:
+    if path in {site.path(p) for p in site.cfg["service_nodes_on"]}:
         graph += site.service_nodes()
     data["@graph"] = graph
     return h[: m.start(1)] + ld_dump(data) + h[m.end(1):]
@@ -860,6 +948,7 @@ def build(root: Path, include_drafts: bool) -> dict:
     write("sitemap-index.xml", render_sitemap_index(site))
     write(site.cfg["feed"]["path"].lstrip("/"), render_rss(site, posts))
     write("site.webmanifest", render_manifest(site))
+    write("llms.txt", render_llms(site, posts))
 
     pages = sorted(p for p in root.glob("**/index.html") if "_ploy_static" not in p.parts and ".git" not in p.parts)
     for page in pages:
