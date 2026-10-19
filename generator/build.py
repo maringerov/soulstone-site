@@ -269,8 +269,12 @@ class Site:
     def person_id(self) -> str:
         return self.origin + "/" + self.cfg["author"]["id"]
 
+    def profile(self, key: str) -> str:
+        url = self.cfg["profiles"].get(key, "")
+        return "" if is_placeholder(url) else url
+
     def same_as(self, keys) -> list[str]:
-        return [self.cfg["profiles"][k] for k in keys if k in self.cfg["profiles"]]
+        return [u for u in (self.profile(k) for k in keys) if u]
 
     def business_node(self) -> dict:
         b = self.cfg["business"]
@@ -292,12 +296,14 @@ class Site:
             "knowsAbout": b["knows_about"],
             "contactPoint": {"@type": "ContactPoint", "email": a["email"], "contactType": "sales"},
             "sameAs": self.same_as(["linkedin_company", "x", "shopify_partner"]),
-            "potentialAction": {
+        }
+        booking = self.profile("booking")
+        if booking:
+            node["potentialAction"] = {
                 "@type": "ReserveAction",
                 "name": "Book a 30-minute store teardown",
-                "target": self.cfg["profiles"]["booking"],
-            },
-        }
+                "target": booking,
+            }
         return node
 
     def person_node(self) -> dict:
@@ -344,8 +350,8 @@ class Site:
         link_cls = "text-ploy-accent-primary transition-opacity hover:opacity-80"
         links = [f'<a href="{a["page"]}" class="{link_cls}">About</a>']
         for key, label in (("x", "X"), ("linkedin", "LinkedIn")):
-            url = self.cfg["profiles"].get(key, "")
-            if url and not is_placeholder(url):
+            url = self.profile(key)
+            if url:
                 links.append(f'<a href="{esc(url)}" rel="me noopener" class="{link_cls}">{label}</a>')
         return (
             f"{AUTHOR_BOX_START}"
