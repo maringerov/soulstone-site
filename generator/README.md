@@ -161,8 +161,9 @@ Both run in `.github/workflows/build.yml` on every push and pull request.
 ## Placeholders
 
 `profiles.shopify_partner` and `profiles.booking` in `site.json` are marked
-`PLACEHOLDER` until the real URLs exist. They appear verbatim in the JSON-LD
-and the lint prints a warning for them. The landing page
+`PLACEHOLDER` until the real URLs exist. The build leaves them out of the
+JSON-LD (no `sameAs` entry, no `ReserveAction`) and the lint prints a warning
+for them. The landing page
 `/shopify-plus-developer-amsterdam` carries a visible pricing placeholder for
 the same reason.
 
