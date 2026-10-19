@@ -31,6 +31,13 @@ both places but not text drift between them.
    `slug` and `updated` are optional. `draft: true` hides the post unless the
    build runs with `--include-drafts`.
 
+   `date` is the day the post goes live, never later. A post dated after the
+   build date (today in Europe/Amsterdam) is skipped with a warning: no page,
+   and nothing in the blog index, tag pages, sitemap, RSS or `llms.txt`. Every
+   sitemap `lastmod` is capped at the build date. `generator/lint.py` fails on
+   any built page whose `datePublished`, or any sitemap `lastmod`, is in the
+   future.
+
 2. Run the build and commit everything it touched:
 
    ```sh

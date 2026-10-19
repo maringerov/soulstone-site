@@ -35,6 +35,12 @@ Rules enforced
   * /blog appears once in the sitemap, every URL carries lastmod, and tag
     pages with fewer than min_tag_posts_in_sitemap posts are left out (and
     marked noindex).
+  * No date in the output is later than the build date (today in
+    Europe/Amsterdam). A post dated after the build date is skipped with a
+    warning: no page, and nothing in the blog index, tag pages, sitemap, RSS
+    or llms.txt. Every sitemap lastmod and the RSS lastBuildDate are capped at
+    the build date. generator/lint.py fails on any built page whose
+    datePublished, or any sitemap lastmod, is later than the lint date.
   * Page URLs end in a slash. GitHub Pages serves <dir>/index.html at <dir>/
     and 301-redirects the slashless form, so every page's canonical and og:url
     are set to its own trailing-slash URL, and internal hrefs, astro-island
@@ -59,11 +65,15 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import markdown
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
+# The site is published from Amsterdam; "today" for publish and lastmod
+# decisions is the local calendar date there, not UTC and not the CI runner's.
+SITE_TZ = ZoneInfo("Europe/Amsterdam")
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
 AUTHOR_BOX_START = "<!-- author-box:start -->"
 AUTHOR_BOX_END = "<!-- author-box:end -->"
@@ -214,6 +224,27 @@ def iso_z(iso: str) -> str:
 
 def rfc822(iso: str) -> str:
     return dt.date.fromisoformat(iso).strftime("%a, %d %b %Y 00:00:00 +0000")
+
+
+def build_date() -> str:
+    """Today's date in Europe/Amsterdam as YYYY-MM-DD."""
+    return dt.datetime.now(SITE_TZ).date().isoformat()
+
+
+def capped(iso: str, today: str) -> str:
+    """min(date, build date): a lastmod must never be in the future."""
+    return min(iso, today)
+
+
+def drop_future_posts(posts: list[dict], today: str) -> list[dict]:
+    """Posts dated after the build date are not published yet; leave them out with a warning."""
+    kept = []
+    for p in posts:
+        if p["date"] > today:
+            print(f"WARNING: skipped {p['source']}: date {p['date']} is after the build date {today}, not published")
+            continue
+        kept.append(p)
+    return kept
 
 
 def slugify(s: str) -> str:
@@ -696,8 +727,8 @@ def render_tag_page(site: Site, tag: str, posts: list[dict], indexable: bool) ->
     )
 
 
-def render_sitemap(site: Site, posts: list[dict], tags: dict[str, list[dict]], indexable_tags: list[str], md_pages: list[dict]) -> str:
-    newest = max(p["updated"] for p in posts) if posts else dt.date.today().isoformat()
+def render_sitemap(site: Site, posts: list[dict], tags: dict[str, list[dict]], indexable_tags: list[str], md_pages: list[dict], today: str) -> str:
+    newest = max(p["updated"] for p in posts) if posts else today
     entries: dict[str, str] = {}
     for sp in site.cfg["static_pages"]:
         entries[site.url(sp["path"])] = sp["lastmod"]
@@ -708,7 +739,7 @@ def render_sitemap(site: Site, posts: list[dict], tags: dict[str, list[dict]], i
         entries[site.url(f"/blog/{p['slug']}")] = p["updated"]
     for t in indexable_tags:
         entries[site.url(f"/tag/{t}")] = max(p["updated"] for p in tags[t])
-    rows = "".join(f"<url><loc>{esc(u)}</loc><lastmod>{d}</lastmod></url>" for u, d in entries.items())
+    rows = "".join(f"<url><loc>{esc(u)}</loc><lastmod>{capped(d, today)}</lastmod></url>" for u, d in entries.items())
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + rows + "</urlset>\n"
@@ -723,7 +754,7 @@ def render_sitemap_index(site: Site) -> str:
     )
 
 
-def render_rss(site: Site, posts: list[dict]) -> str:
+def render_rss(site: Site, posts: list[dict], today: str) -> str:
     feed = site.cfg["feed"]
     author = site.cfg["author"]["name"]
     items = []
@@ -740,7 +771,7 @@ def render_rss(site: Site, posts: list[dict]) -> str:
             f"<description>{esc(p['description'])}</description>"
             f"{cats}</item>"
         )
-    newest = max(p["date"] for p in posts) if posts else dt.date.today().isoformat()
+    newest = capped(max(p["date"] for p in posts) if posts else today, today)
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">'
@@ -897,9 +928,11 @@ def apply_head(site: Site, h: str, where: str) -> str:
 # ------------------------------------------------------------------- build
 def build(root: Path, include_drafts: bool) -> dict:
     site = Site(root)
-    md_posts = load_markdown_posts(site, root / "posts", include_drafts)
+    today = build_date()
+    all_md_posts = load_markdown_posts(site, root / "posts", include_drafts)
+    md_posts = drop_future_posts(all_md_posts, today)
     md_pages = load_markdown_pages(site, root / "pages")
-    legacy = parse_legacy_posts(site, {p["slug"] for p in md_posts})
+    legacy = drop_future_posts(parse_legacy_posts(site, {p["slug"] for p in all_md_posts}), today)
     posts = sorted(md_posts + legacy, key=lambda p: (p["date"], p["slug"]), reverse=True)
     written: list[Path] = []
 
@@ -944,9 +977,9 @@ def build(root: Path, include_drafts: bool) -> dict:
             shutil.rmtree(stale.parent)
             print(f"removed stale tag page tag/{stale.parent.name}")
 
-    write("sitemap-0.xml", render_sitemap(site, posts, tags, indexable, md_pages))
+    write("sitemap-0.xml", render_sitemap(site, posts, tags, indexable, md_pages, today))
     write("sitemap-index.xml", render_sitemap_index(site))
-    write(site.cfg["feed"]["path"].lstrip("/"), render_rss(site, posts))
+    write(site.cfg["feed"]["path"].lstrip("/"), render_rss(site, posts, today))
     write("site.webmanifest", render_manifest(site))
     write("llms.txt", render_llms(site, posts))
 
@@ -956,7 +989,8 @@ def build(root: Path, include_drafts: bool) -> dict:
         write(rel, apply_head(site, page.read_text(encoding="utf-8"), rel))
 
     print(
-        f"\n{len(posts)} posts ({len(md_posts)} from Markdown, {len(legacy)} legacy), {len(md_pages)} Markdown pages, "
+        f"\nbuild date {today} (Europe/Amsterdam): "
+        f"{len(posts)} posts ({len(md_posts)} from Markdown, {len(legacy)} legacy), {len(md_pages)} Markdown pages, "
         f"{len(tags)} tags ({len(indexable)} in sitemap), head and analytics blocks on {len(pages)} pages"
     )
     thin = sorted(set(tags) - set(indexable))

@@ -2,7 +2,7 @@
 title: "owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy"
 slug: checkout-extension-metafields-owner-type
 description: "From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check."
-date: 2026-10-22
+date: 2026-10-17
 tags: [shopify, changelog, checkout-extensibility, metafields, ui-extensions]
 draft: false
 ---

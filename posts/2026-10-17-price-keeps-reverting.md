@@ -2,7 +2,7 @@
 title: "The price keeps reverting. The theme is not the problem."
 slug: price-keeps-reverting-theme-not-the-problem
 description: "A sale price came back overnight after a manual fix. How I traced the real writer in Shopify, and why I map every writer before touching code."
-date: 2026-10-19
+date: 2026-10-17
 tags: [shopify, diagnostics, product-data, erp, compare-at]
 draft: false
 ---

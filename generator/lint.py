@@ -24,17 +24,23 @@ Fails on
     to an HTML page must end in "/". The canonical must also be the page's own
     URL. Files with an extension (/rss.xml, /favicon.svg) and bare fragments
     (#contact) are exempt; a fragment or query goes after the slash.
+  * a date in the future: any sitemap <lastmod> or any JSON-LD datePublished
+    later than today in Europe/Amsterdam (the build date). Nothing on the site
+    may claim to have been published or changed on a day that has not happened.
 Prints a warning for configuration values still marked PLACEHOLDER.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 REPO = Path(__file__).resolve().parent.parent
+TODAY = dt.datetime.now(ZoneInfo("Europe/Amsterdam")).date().isoformat()
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
 TEXT_SUFFIXES = {".html", ".js", ".css", ".md", ".txt", ".xml", ".json", ".yml", ".yaml", ".py", ".svg", ".webmanifest"}
 SKIP_PARTS = {".git", "__pycache__", "node_modules"}
@@ -101,6 +107,21 @@ def jsonld_urls(node) -> list[str]:
                 found.append(v)
             else:
                 found += jsonld_urls(v)
+    return found
+
+
+def published_dates(node) -> list[str]:
+    """Every datePublished value in a JSON-LD graph, as YYYY-MM-DD."""
+    found: list[str] = []
+    if isinstance(node, list):
+        for n in node:
+            found += published_dates(n)
+    elif isinstance(node, dict):
+        for k, v in node.items():
+            if k == "datePublished" and isinstance(v, str):
+                found.append(v[:10])
+            else:
+                found += published_dates(v)
     return found
 
 
@@ -178,6 +199,9 @@ def main() -> int:
             bad = sorted({u for u in jsonld_urls(data) if missing_slash(u)})
             if bad:
                 errors.append(f"{rel}: JSON-LD URL without trailing slash: {bad}")
+            future = sorted({d for d in published_dates(data) if d > TODAY})
+            if future:
+                errors.append(f"{rel}: datePublished {future} is after today ({TODAY})")
         if 'type="image/x-icon"' in h:
             errors.append(f"{rel}: old Ploy favicon link still present")
         if re.search(r"\{\{[a-z_]+\}\}", h):
@@ -217,6 +241,9 @@ def main() -> int:
     for loc in locs:
         if missing_slash(loc) or not loc.startswith(ORIGIN + "/"):
             errors.append(f"sitemap-0.xml: <loc>{loc}</loc> is not a trailing-slash page URL on {ORIGIN}")
+    for loc, lastmod in re.findall(r"<loc>([^<]+)</loc><lastmod>([^<]+)</lastmod>", sitemap):
+        if lastmod[:10] > TODAY:
+            errors.append(f"sitemap-0.xml: {loc} lastmod {lastmod} is after today ({TODAY})")
 
     rss = (REPO / "rss.xml").read_text(encoding="utf-8")
     for u in re.findall(r"<(?:link|guid[^>]*)>([^<]+)</(?:link|guid)>", rss):
