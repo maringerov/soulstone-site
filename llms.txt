@@ -6,19 +6,20 @@ Contact: marin@soulstone.co. First step is a free 30-minute store teardown.
 Profiles: https://www.linkedin.com/in/maringerov, https://x.com/maringerov, https://www.linkedin.com/company/soulstone
 
 ## Services
-- [Freelance Shopify Plus developer in Amsterdam](https://soulstone.co/shopify-plus-developer-amsterdam): who the work is for, services, process and FAQ.
-- [Shopify Plus architecture](https://soulstone.co/shopify-plus-architecture): re-architecting complex Plus setups, app consolidation, performance.
-- [Results](https://soulstone.co/results): anonymised case study of a premium Shopify Plus rebuild.
-- [FAQ](https://soulstone.co/faq): fit, engagement model, teardown, how lift is measured.
+- [Freelance Shopify Plus developer in Amsterdam](https://soulstone.co/shopify-plus-developer-amsterdam/): who the work is for, services, process and FAQ.
+- [Shopify Plus architecture](https://soulstone.co/shopify-plus-architecture/): re-architecting complex Plus setups, app consolidation, performance.
+- [Results](https://soulstone.co/results/): anonymised case study of a premium Shopify Plus rebuild.
+- [FAQ](https://soulstone.co/faq/): fit, engagement model, teardown, how lift is measured.
 
 ## Journal
-- [owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy](https://soulstone.co/blog/checkout-extension-metafields-owner-type): the API 2026-10 change, before and after TOML, and a repo check script.
-- [The price keeps reverting. The theme is not the problem.](https://soulstone.co/blog/price-keeps-reverting-theme-not-the-problem): tracing which system writes a Shopify price, and mapping every writer before touching code.
-- [Most premium brands have a conversion problem, not a traffic problem](https://soulstone.co/blog/conversion-not-traffic-problem)
-- [The hidden cost of Shopify Plus app sprawl](https://soulstone.co/blog/hidden-cost-shopify-plus-app-sprawl)
-- [Mobile speed and conversion on premium Shopify](https://soulstone.co/blog/mobile-speed-conversion-premium-shopify)
-- [The anatomy of a product page that closes premium buyers](https://soulstone.co/blog/premium-product-page-anatomy)
-- [Replatforming is usually the wrong answer](https://soulstone.co/blog/replatforming-usually-wrong-answer)
+- [owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy](https://soulstone.co/blog/checkout-extension-metafields-owner-type/): From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check.
+- [The price keeps reverting. The theme is not the problem.](https://soulstone.co/blog/price-keeps-reverting-theme-not-the-problem/): A sale price came back overnight after a manual fix. How I traced the real writer in Shopify, and why I map every writer before touching code.
+- [How do I migrate to checkout extensibility after checkout.liquid and Additional scripts?](https://soulstone.co/blog/checkout-extensibility-migration-tracking/): Tracking moves to Customer events, visible changes move to UI extensions, and theme code never runs in checkout. The 15-minute check and the fixes.
+- [On premium Shopify stores, mobile speed is a conversion lever, not an IT metric](https://soulstone.co/blog/mobile-speed-conversion-premium-shopify/): Why Core Web Vitals quietly cap revenue on premium Shopify Plus stores, what actually slows them down, and the order to fix it in.
+- [Most premium brands don't have a traffic problem. They have a conversion problem.](https://soulstone.co/blog/conversion-not-traffic-problem/): Why established premium brands keep buying more attention to fix a problem that lives on the store, and how to tell the difference before you spend another euro on ads.
+- [Replatforming is usually the wrong answer](https://soulstone.co/blog/replatforming-usually-wrong-answer/): When a premium Shopify Plus store feels broken, replatforming feels like the fix. It usually isn't. Here's how to decide between a rebuild and a re-architecture.
+- [The anatomy of a product page that closes premium buyers](https://soulstone.co/blog/premium-product-page-anatomy/): Premium customers decide fast. Here's what belongs above the fold on a high-end Shopify product page, and the order of information that turns intent into a sale.
+- [The hidden cost of Shopify Plus app sprawl](https://soulstone.co/blog/hidden-cost-shopify-plus-app-sprawl/): How a dozen well-intentioned apps quietly become the reason your store is slow, fragile, and expensive to change, and how to think about consolidating them without a risky replatform.
 - Feed: https://soulstone.co/rss.xml
 
 ## Optional

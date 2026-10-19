@@ -52,6 +52,7 @@ both places but not text drift between them.
 | `<path>/index.html` (for example `privacy/index.html`) | `pages/*.md` and `generator/templates/page.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
+| `llms.txt` | `generator/templates/llms.txt` with the Journal list rendered from all posts |
 | `site.webmanifest` | `site_name`, `business.description` and `icons` in `site.json` plus `MANIFEST_ICONS` in `build.py` |
 | the shared head block on every page | `generator/site.json` (og:image, twitter card, RSS link, favicon and app icon links, manifest, theme-color, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
 | the analytics block on every page | `analytics.ga4_measurement_id` in `site.json` plus the consent bar styles and script (`CONSENT_CSS`, `CONSENT_JS` in `build.py`) |
@@ -149,12 +150,33 @@ together (the `Privacy` link in the Studio column is an example) or hydration
 replaces the footer with the bundle's version. The lint fails if a page has no
 footer link to `/privacy`.
 
+## Trailing slashes
+
+GitHub Pages serves `<dir>/index.html` at `<dir>/` and 301-redirects the
+slashless form, so the URL that answers 200 for every page ends in a slash
+(`/faq/`, `/blog/<slug>/`, `/tag/<tag>/`; the homepage is `/`). `site.json`,
+front matter and the `static_pages` list keep the short form (`/faq`,
+`/shopify-plus-developer-amsterdam#services`); `Site.url()` and `page_path()`
+in `build.py` add the slash and keep fragments after it. The shared head pass
+sets every page's canonical and `og:url` to its own trailing-slash URL and
+rewrites internal `href`s, the serialized header links in the astro-island
+props and the `url`, `@id`, `item` and `mainEntityOfPage` fields in the
+JSON-LD, so Markdown posts and static pages do not need to get it right by
+hand. Files with an extension (`/rss.xml`, `/favicon.svg`) keep their name.
+The Astro bundles under `_ploy_static/_astro/` are not rewritten; their
+`href:` values are edited by hand and the lint checks them.
+
 ## Checks
 
 ```sh
 python3 generator/build.py --check   # committed output matches a fresh build
-python3 generator/lint.py            # dashes in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS, GA4 tag, consent script, privacy link
+python3 generator/lint.py            # dashes in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS, llms.txt, GA4 tag, consent script, privacy link, trailing slashes
 ```
+
+The lint fails if any canonical, `og:url`, hreflang, JSON-LD URL, sitemap
+`<loc>`, RSS `<link>` or `<guid>`, `llms.txt` link or internal `href` (pages,
+templates and bundles) points at an HTML page without the trailing slash, or
+if a page's canonical is not its own URL.
 
 Both run in `.github/workflows/build.yml` on every push and pull request.
 

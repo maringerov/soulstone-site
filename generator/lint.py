@@ -17,6 +17,13 @@ Fails on
   * leftover {{placeholders}} from the templates
   * the Google Search Console verification file changed, gained a trailing
     newline or ended up in the sitemap
+  * a page URL without its trailing slash. GitHub Pages serves <dir>/index.html
+    at <dir>/ and 301-redirects the slashless form, so every canonical, og:url,
+    JSON-LD url/@id/item/mainEntityOfPage, sitemap <loc>, RSS <link>/<guid>,
+    llms.txt link and internal href (in pages, templates and the Astro bundles)
+    to an HTML page must end in "/". The canonical must also be the page's own
+    URL. Files with an extension (/rss.xml, /favicon.svg) and bare fragments
+    (#contact) are exempt; a fragment or query goes after the slash.
 Prints a warning for configuration values still marked PLACEHOLDER.
 """
 from __future__ import annotations
@@ -35,10 +42,66 @@ SKIP_PARTS = {".git", "__pycache__", "node_modules"}
 # head block, a trailing newline or a sitemap entry.
 GOOGLE_VERIFICATION = "googlef0ef0874c5fa4c80.html"
 GOOGLE_VERIFICATION_BODY = b"google-site-verification: googlef0ef0874c5fa4c80.html"
+ORIGIN = json.loads((REPO / "generator" / "site.json").read_text(encoding="utf-8"))["origin"].rstrip("/")
+JSONLD_URL_KEYS = {"url", "@id", "item", "mainEntityOfPage"}
 
 
 def pages() -> list[Path]:
     return sorted(p for p in REPO.glob("**/index.html") if "_ploy_static" not in p.parts and ".git" not in p.parts)
+
+
+def templates() -> list[Path]:
+    return sorted((REPO / "generator" / "templates").glob("*.html"))
+
+
+def bundles() -> list[Path]:
+    return sorted((REPO / "_ploy_static" / "_astro").glob("*.js"))
+
+
+def internal_path(url: str) -> str | None:
+    """Site-relative path for an internal URL, None for external links and bare fragments."""
+    if url.startswith(ORIGIN + "/") or url == ORIGIN:
+        return url[len(ORIGIN):] or "/"
+    if url.startswith("/"):
+        return url
+    return None
+
+
+def missing_slash(url: str) -> bool:
+    """True when an internal URL points at an HTML page without its trailing slash."""
+    path = internal_path(url)
+    if path is None:
+        return False
+    base = re.split(r"[#?]", path, 1)[0]
+    if base.endswith("/"):
+        return False
+    return "." not in base.rsplit("/", 1)[-1]
+
+
+def page_url(page: Path) -> str:
+    rel = page.relative_to(REPO).parent.as_posix()
+    return ORIGIN + "/" + ("" if rel == "." else rel + "/")
+
+
+def href_errors(h: str, rel: str) -> list[str]:
+    """Internal hrefs (attributes and serialized astro-island props) that lack the trailing slash."""
+    hrefs = re.findall(r'\bhref="([^"]*)"', h) + re.findall(r"&quot;href&quot;:\[0,&quot;([^&]*)&quot;\]", h)
+    bad = sorted({u for u in hrefs if missing_slash(u)})
+    return [f"{rel}: href without trailing slash: {bad}"] if bad else []
+
+
+def jsonld_urls(node) -> list[str]:
+    found: list[str] = []
+    if isinstance(node, list):
+        for n in node:
+            found += jsonld_urls(n)
+    elif isinstance(node, dict):
+        for k, v in node.items():
+            if k in JSONLD_URL_KEYS and isinstance(v, str):
+                found.append(v)
+            else:
+                found += jsonld_urls(v)
+    return found
 
 
 def shipped_text_files() -> list[Path]:
@@ -88,20 +151,54 @@ def main() -> int:
                             ('<script async src="https://www.googletagmanager.com/gtag/js?id=G-', "GA4 tag"),
                             ("gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'})", "GA4 consent default"),
                             ("window.__ssConsent", "cookie consent script"),
-                            ('<a href="/privacy" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Privacy</a>', "footer privacy link")]:
+                            ('<a href="/privacy/" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Privacy</a>', "footer privacy link")]:
             if attr not in h:
                 errors.append(f"{rel}: missing {label}")
+        own = page_url(page)
+        canonical = re.search(r'<link rel="canonical" href="([^"]*)"', h)
+        if not canonical:
+            errors.append(f"{rel}: no canonical link")
+        elif canonical.group(1) != own:
+            errors.append(f"{rel}: canonical {canonical.group(1)!r} is not the page's own URL {own!r}")
+        og_url = re.search(r'<meta property="og:url" content="([^"]*)"', h)
+        if not og_url:
+            errors.append(f"{rel}: no og:url")
+        elif og_url.group(1) != own:
+            errors.append(f"{rel}: og:url {og_url.group(1)!r} is not the page's own URL {own!r}")
+        hreflang = [u for u in re.findall(r'<link rel="alternate" hreflang="[^"]*" href="([^"]*)"', h) if missing_slash(u)]
+        if hreflang:
+            errors.append(f"{rel}: hreflang without trailing slash: {sorted(set(hreflang))}")
+        errors += href_errors(h, rel)
         for raw in re.findall(r'<script type="application/ld\+json">(.*?)</script>', h, re.S):
             try:
-                json.loads(raw)
+                data = json.loads(raw)
             except json.JSONDecodeError as e:
                 errors.append(f"{rel}: JSON-LD does not parse: {e}")
+                continue
+            bad = sorted({u for u in jsonld_urls(data) if missing_slash(u)})
+            if bad:
+                errors.append(f"{rel}: JSON-LD URL without trailing slash: {bad}")
         if 'type="image/x-icon"' in h:
             errors.append(f"{rel}: old Ploy favicon link still present")
         if re.search(r"\{\{[a-z_]+\}\}", h):
             errors.append(f"{rel}: unfilled template placeholder")
         for m in re.finditer(r"PLACEHOLDER[^<\"]*", h):
             placeholders.setdefault(m.group(0).strip(), set()).add(rel)
+
+    for tpl in templates():
+        rel = str(tpl.relative_to(REPO))
+        t = tpl.read_text(encoding="utf-8")
+        errors += href_errors(t, rel)
+        for attr, label in [(r'<link rel="canonical" href="([^"]*)"', "canonical"), (r'<meta property="og:url" content="([^"]*)"', "og:url")]:
+            m = re.search(attr, t)
+            if m and m.group(1) != "{{url}}" and not m.group(1).endswith("/"):
+                errors.append(f"{rel}: {label} {m.group(1)!r} lacks the trailing slash")
+
+    for js in bundles():
+        rel = str(js.relative_to(REPO))
+        bad = sorted({u for u in re.findall(r'\bhref:"([^"]*)"', js.read_text(encoding="utf-8")) if missing_slash(u) or u.endswith(".html") or "index.html#" in u})
+        if bad:
+            errors.append(f"{rel}: href without trailing slash: {bad}")
 
     for xml in ["sitemap-0.xml", "sitemap-index.xml", "rss.xml"]:
         try:
@@ -117,6 +214,19 @@ def main() -> int:
         errors.append("sitemap-0.xml: every <url> needs a <lastmod>")
     if any(GOOGLE_VERIFICATION in loc for loc in locs):
         errors.append(f"sitemap-0.xml: {GOOGLE_VERIFICATION} must not be listed")
+    for loc in locs:
+        if missing_slash(loc) or not loc.startswith(ORIGIN + "/"):
+            errors.append(f"sitemap-0.xml: <loc>{loc}</loc> is not a trailing-slash page URL on {ORIGIN}")
+
+    rss = (REPO / "rss.xml").read_text(encoding="utf-8")
+    for u in re.findall(r"<(?:link|guid[^>]*)>([^<]+)</(?:link|guid)>", rss):
+        if missing_slash(u):
+            errors.append(f"rss.xml: {u} lacks the trailing slash")
+
+    llms = (REPO / "llms.txt").read_text(encoding="utf-8")
+    for u in re.findall(r"https?://[^\s)\]>]+", llms):
+        if missing_slash(u):
+            errors.append(f"llms.txt: {u} lacks the trailing slash")
 
     icon_files = {"favicon.svg", "favicon.ico", "apple-touch-icon.png"}
     try:
