@@ -2,7 +2,7 @@
   "origin": "https://soulstone.co",
   "site_name": "Soulstone",
   "og_image": "/assets/og-default.jpg",
-  "og_image_alt": "Soulstone: freelance Shopify Plus developer and conversion specialist in Amsterdam",
+  "og_image_alt": "Soulstone: independent Shopify Plus developer and conversion specialist in Amsterdam",
   "icons": {
     "theme_color": "#080F0C",
     "background_color": "#080F0C",
@@ -17,7 +17,7 @@
   "author": {
     "id": "#marin",
     "name": "Marin Gerov",
-    "job_title": "Freelance Shopify Plus Developer and Conversion Specialist",
+    "job_title": "Independent Shopify Plus Developer and Architect",
     "bio": "Independent Shopify and Shopify Plus developer in Amsterdam. Works with premium, design-led brands on product pages, checkout flows and store architecture, mostly through referrals.",
     "page": "/shopify-plus-developer-amsterdam",
     "email": "marin@soulstone.co"

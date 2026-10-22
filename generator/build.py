@@ -35,6 +35,11 @@ Rules enforced
     every template, site.json, every page rendered from Markdown and every
     legacy HTML post. generator/lint.py extends the check to all shipped HTML
     and JS.
+  * Banned words fail the build (BANNED_WORDS, case-insensitive): the site
+    describes Marin as an independent developer and never uses the usual
+    label for a self-employed contractor. Checked in every Markdown source,
+    every template, site.json and every finished HTML page after the head
+    pass; generator/lint.py extends it to every shipped text file.
   * /blog appears once in the sitemap, every URL carries lastmod, and tag
     pages with fewer than min_tag_posts_in_sitemap posts are left out (and
     marked noindex).
@@ -78,6 +83,12 @@ REPO = HERE.parent
 # decisions is the local calendar date there, not UTC and not the CI runner's.
 SITE_TZ = ZoneInfo("Europe/Amsterdam")
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
+# Words that must not appear in site copy, matched case-insensitively in every
+# source and every rendered page. The optional hyphen catches the hyphenated
+# spelling and keeps the banned string itself out of this file.
+BANNED_WORDS = {
+    re.compile(r"free-?lanc", re.I): "say independent, or describe the work, instead",
+}
 AUTHOR_BOX_START = "<!-- author-box:start -->"
 AUTHOR_BOX_END = "<!-- author-box:end -->"
 HEAD_START = "<!-- soulstone-head:start -->"
@@ -358,6 +369,19 @@ def check_dashes(text: str, where: str) -> None:
                 raise BuildError(f"{where}:{n}:{col}: {name} found, use a comma, colon or full stop instead")
 
 
+def check_banned_words(text: str, where: str) -> None:
+    for n, line in enumerate(text.splitlines(), 1):
+        for pat, hint in BANNED_WORDS.items():
+            m = pat.search(line)
+            if m:
+                raise BuildError(f"{where}:{n}:{m.start() + 1}: banned word {m.group(0)!r}, {hint}")
+
+
+def check_copy(text: str, where: str) -> None:
+    check_dashes(text, where)
+    check_banned_words(text, where)
+
+
 def render(tpl: str, **values: str) -> str:
     out = tpl
     for k, v in values.items():
@@ -428,13 +452,13 @@ class Site:
         self.root = root
         cfg_path = root / "generator" / "site.json"
         raw = cfg_path.read_text(encoding="utf-8")
-        check_dashes(raw, str(cfg_path.relative_to(root)))
+        check_copy(raw, str(cfg_path.relative_to(root)))
         self.cfg = json.loads(raw)
         self.origin = self.cfg["origin"].rstrip("/")
         self.templates = {}
         for p in sorted((root / "generator" / "templates").glob("*.*")):
             text = p.read_text(encoding="utf-8")
-            check_dashes(text, str(p.relative_to(root)))
+            check_copy(text, str(p.relative_to(root)))
             self.templates[p.stem] = text
 
     def path(self, path: str) -> str:
@@ -576,7 +600,7 @@ def load_markdown_posts(site: Site, posts_dir: Path, include_drafts: bool) -> li
     for f in sorted(posts_dir.glob("*.md")):
         where = str(f.relative_to(site.root))
         text = f.read_text(encoding="utf-8")
-        check_dashes(text, where)
+        check_copy(text, where)
         meta, body = parse_front_matter(text, where)
         for key in ("title", "description", "date"):
             if not meta.get(key):
@@ -621,7 +645,7 @@ def load_markdown_pages(site: Site, pages_dir: Path) -> list[dict]:
     for f in sorted(pages_dir.glob("*.md")):
         where = str(f.relative_to(site.root))
         text = f.read_text(encoding="utf-8")
-        check_dashes(text, where)
+        check_copy(text, where)
         meta, body = parse_front_matter(text, where)
         for key in ("title", "description", "path", "lastmod"):
             if not meta.get(key):
@@ -1154,7 +1178,11 @@ def build(root: Path, include_drafts: bool) -> dict:
     pages = sorted(p for p in root.glob("**/index.html") if "_ploy_static" not in p.parts and ".git" not in p.parts)
     for page in pages:
         rel = str(page.relative_to(root))
-        write(rel, apply_head(site, page.read_text(encoding="utf-8"), rel))
+        final = apply_head(site, page.read_text(encoding="utf-8"), rel)
+        # Checked on the finished page, after the head pass, so a stale head
+        # block in the committed output cannot fail a build that would fix it.
+        check_banned_words(final, rel)
+        write(rel, final)
 
     print(
         f"\nbuild date {today} (Europe/Amsterdam): "

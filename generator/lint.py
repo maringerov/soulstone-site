@@ -5,6 +5,9 @@ Fails on
   * em or en dashes anywhere in shipped HTML, JS and text: every *.html page,
     every bundle under _ploy_static/_astro, Markdown posts, generator files,
     workflows, llms.txt and robots.txt
+  * banned words (BANNED_WORDS, case-insensitive) in the same files: the site
+    describes Marin as an independent developer and never uses the usual
+    label for a self-employed contractor
   * sitemap and RSS that are not well-formed XML
   * JSON-LD on any page that does not parse
   * pages missing og:image, a large twitter card, the RSS link, the favicon
@@ -45,6 +48,11 @@ from zoneinfo import ZoneInfo
 REPO = Path(__file__).resolve().parent.parent
 TODAY = dt.datetime.now(ZoneInfo("Europe/Amsterdam")).date().isoformat()
 DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
+# Same list as build.py. The optional hyphen catches the hyphenated spelling
+# and keeps the banned string itself out of this file.
+BANNED_WORDS = {
+    re.compile(r"free-?lanc", re.I): "say independent, or describe the work, instead",
+}
 TEXT_SUFFIXES = {".html", ".js", ".css", ".md", ".txt", ".xml", ".json", ".yml", ".yaml", ".py", ".svg", ".webmanifest"}
 SKIP_PARTS = {".git", "__pycache__", "node_modules"}
 # Google serves this back byte for byte; it is not a page and never gets a
@@ -147,9 +155,18 @@ def main() -> int:
                 if ch in line:
                     errors.append(f"{where}:{n}: {name}")
 
+    def banned_words(text: str, where: str) -> None:
+        for n, line in enumerate(text.splitlines(), 1):
+            for pat, hint in BANNED_WORDS.items():
+                for m in pat.finditer(line):
+                    errors.append(f"{where}:{n}:{m.start() + 1}: banned word {m.group(0)!r}, {hint}")
+
     scanned = shipped_text_files()
     for f in scanned:
-        dashes(f.read_text(encoding="utf-8"), str(f.relative_to(REPO)))
+        text = f.read_text(encoding="utf-8")
+        where = str(f.relative_to(REPO))
+        dashes(text, where)
+        banned_words(text, where)
 
     for page in pages():
         rel = str(page.relative_to(REPO))
@@ -305,7 +322,7 @@ def main() -> int:
             print(f"error: {e}", file=sys.stderr)
         print(f"\n{len(errors)} lint error(s)", file=sys.stderr)
         return 1
-    print(f"lint ok: {len(pages())} pages checked, {len(scanned)} files scanned for dashes")
+    print(f"lint ok: {len(pages())} pages checked, {len(scanned)} files scanned for dashes and banned words")
     return 0
 
 
