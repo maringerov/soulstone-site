@@ -13,7 +13,9 @@ Sources
   generator/templates/  HTML templates cut from the Ploy export.
 
 Outputs (generator-owned, never hand edit)
-  blog/<slug>/index.html for every Markdown post
+  blog/<slug>/index.html for every Markdown post, each with one in-article
+    Win Chat promo card at the section break nearest the middle of the body
+    (legacy posts get the same card in place)
   <path>/index.html for every Markdown page
   blog/index.html, tag/<tag>/index.html
   sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
@@ -195,6 +197,33 @@ PROMO_JS = (
     "})();"
 )
 PROMO_HEAD = f"<style>{PROMO_CSS}</style><script>{PROMO_JS}</script>"
+
+# In-article Win Chat promo. One card per blog post, placed by the build at the
+# section break nearest the middle of the body (see promo_position). The markup
+# is wrapped in markers so a rebuild replaces it in place, and it carries
+# not-prose so the typography plugin leaves it alone.
+ARTICLE_PROMO_START = "<!-- win-chat-promo:start -->"
+ARTICLE_PROMO_END = "<!-- win-chat-promo:end -->"
+ARTICLE_PROMO_CSS = (
+    ".ss-article-promo{margin:3rem 0;padding:1.5rem;border:1px solid color-mix(in oklab,var(--ploy-accent-primary)40%,transparent);"
+    "border-top:2px solid var(--ploy-accent-primary);background:color-mix(in oklab,var(--ploy-neutral-secondary)92%,transparent)}"
+    ".ss-article-promo .ss-article-promo-cta{width:100%}"
+    "@media (min-width:40rem){.ss-article-promo{padding:2rem}.ss-article-promo .ss-article-promo-cta{width:auto}}"
+    "@media (min-width:64rem){.ss-article-promo{margin:3.5rem 0;padding:2.5rem}}"
+)
+ARTICLE_PROMO = (
+    f"{ARTICLE_PROMO_START}"
+    f'<aside class="not-prose ss-article-promo" aria-label="Win Chat">'
+    '<p class="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-ploy-accent-primary">Win Chat</p>'
+    '<p class="mt-4 font-heading text-2xl leading-tight tracking-tight text-ploy-text-primary sm:text-3xl">Is AI recommending your brand?</p>'
+    '<p class="mt-4 max-w-xl leading-relaxed text-ploy-text-secondary">We get Shopify brands found and recommended in ChatGPT, Perplexity, Gemini and Google AI Overviews.</p>'
+    f'<a href="{WIN_CHAT_PATH}" class="ss-article-promo-cta mt-8 inline-flex items-center justify-center gap-2 whitespace-nowrap font-button uppercase tracking-[0.12em] font-semibold '
+    "transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ploy-accent-primary/60 "
+    'bg-ploy-accent-primary text-ploy-button-primary-text hover:bg-ploy-accent-primary-400 h-14 px-8 text-[0.8rem]">See how Win Chat works</a>'
+    "</aside>"
+    f"{ARTICLE_PROMO_END}"
+)
+ARTICLE_PROMO_HEAD = f"<style>{ARTICLE_PROMO_CSS}</style>"
 # Favicon and app icons. The SVG carries a solid rounded-square background so
 # the mark reads on light and dark browser tabs; the ICO is the fallback for
 # browsers without SVG favicon support and Safari uses the apple-touch-icon.
@@ -712,6 +741,76 @@ def upsert_author_box(site: Site, h: str, where: str) -> str:
     return h[:i] + box + " " + h[i:]
 
 
+PROSE_OPEN = re.compile(r'<div class="prose[^"]*">')
+BLOCK_TAG = re.compile(r"<(/?)(h2|p|ul|ol|blockquote|table|pre|figure|details|div|section)\b[^>]*>", re.I)
+CONTAINERS = {"ul", "ol", "blockquote", "table", "pre", "figure", "details", "div", "section"}
+
+
+def article_body_span(h: str, where: str) -> tuple[int, int]:
+    """Start and end of the post body: the inside of the prose div, up to the author box."""
+    m = PROSE_OPEN.search(h)
+    if not m:
+        raise BuildError(f"{where}: no prose container, cannot place the Win Chat promo")
+    stop = h.find(AUTHOR_BOX_START, m.end())
+    if stop < 0:
+        stop = h.find(TAGS_UL, m.end())
+    if stop < 0:
+        raise BuildError(f"{where}: author box or tag list not found after the prose container")
+    end = h.rfind("</div>", m.end(), stop)
+    if end < 0:
+        raise BuildError(f"{where}: prose container is not closed before the author box")
+    return m.end(), end
+
+
+def promo_position(body: str, where: str) -> int:
+    """Offset in body where the in-article promo goes.
+
+    Only top-level blocks count (nothing inside a list, table, quote or code
+    block). With two or more H2s the card sits at the section break nearest
+    the middle of the body, that is directly before the H2 whose start is
+    closest to 50% of the body length. It never goes before the end of the
+    second paragraph and, because the candidates are the H2s themselves, never
+    after the last H2. With fewer than two H2s it goes after the top-level
+    paragraph nearest the midpoint, again not before the second paragraph and,
+    where possible, not after the last H2.
+    """
+    depth = 0
+    h2_starts: list[int] = []
+    p_ends: list[int] = []
+    for m in BLOCK_TAG.finditer(body):
+        closing, tag = m.group(1) == "/", m.group(2).lower()
+        if tag in CONTAINERS:
+            depth += -1 if closing else 1
+            continue
+        if depth:
+            continue
+        if tag == "h2" and not closing:
+            h2_starts.append(m.start())
+        elif tag == "p" and closing:
+            p_ends.append(m.end())
+    if len(p_ends) < 2:
+        raise BuildError(f"{where}: fewer than two paragraphs, cannot place the Win Chat promo")
+    mid = len(body) / 2
+    floor = p_ends[1]
+    if len(h2_starts) >= 2:
+        breaks = [pos for pos in h2_starts if pos >= floor]
+        if breaks:
+            return min(breaks, key=lambda pos: abs(pos - mid))
+    cands = p_ends[1:]
+    if h2_starts:
+        cands = [pos for pos in cands if pos <= h2_starts[-1]] or cands
+    return min(cands, key=lambda pos: abs(pos - mid))
+
+
+def upsert_article_promo(h: str, where: str) -> str:
+    """Put exactly one Win Chat promo card in a post, replacing any earlier one."""
+    h = re.sub(re.escape(ARTICLE_PROMO_START) + ".*?" + re.escape(ARTICLE_PROMO_END) + r"\n?", "", h, flags=re.S)
+    start, end = article_body_span(h, where)
+    body = h[start:end]
+    at = start + promo_position(body, where)
+    return h[:at] + ARTICLE_PROMO + "\n" + h[at:]
+
+
 def page_jsonld(site: Site, name: str, description: str, url: str, extra: list[dict] | None = None) -> str:
     graph = [site.business_node(), site.person_node(), site.website_node(),
              {"@type": "WebPage", "name": name, "description": description, "url": url}]
@@ -885,6 +984,7 @@ def head_block(site: Site) -> str:
         f'<meta name="theme-color" content="{esc(site.cfg["icons"]["theme_color"])}"/>'
         f"{NAV_HEAD}"
         f"{PROMO_HEAD}"
+        f"{ARTICLE_PROMO_HEAD}"
         f"{HEAD_END}"
     )
 
@@ -1012,16 +1112,17 @@ def build(root: Path, include_drafts: bool) -> dict:
 
     for p in md_posts:
         rel = f"blog/{p['slug']}/index.html"
-        page = render_post(site, p)
+        page = upsert_article_promo(render_post(site, p), rel)
         check_dashes(page, rel)
         write(rel, page)
         print(f"post   {rel}  <- {p['source']}")
     for p in legacy:
         rel = p["source"]
         page = upsert_author_box(site, (root / rel).read_text(encoding="utf-8"), rel)
+        page = upsert_article_promo(page, rel)
         check_dashes(page, rel)
         write(rel, page)
-        print(f"legacy {rel}  (author box refreshed, content kept)")
+        print(f"legacy {rel}  (author box and Win Chat promo refreshed, content kept)")
     for p in md_pages:
         rel = f"{p['path'].lstrip('/')}/index.html"
         page = render_page(site, p)
