@@ -55,7 +55,7 @@ both places but not text drift between them.
 
 | Output | Source |
 |---|---|
-| `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html` |
+| `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html`, plus one in-article Win Chat promo card (`ARTICLE_PROMO` in `build.py`) placed by `promo_position()`; legacy posts get the same card in place |
 | `<path>/index.html` (for example `privacy/index.html`) | `pages/*.md` and `generator/templates/page.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
@@ -155,6 +155,19 @@ identical. It lives in the same three places as the rest of the header (static
 pages, templates, the `$o` default links in the SiteHeader bundle and the
 `links:` props in the three `page.*.js` bundles). The lint fails if a page
 lacks it in either menu.
+
+## In-article Win Chat promo
+
+Every post carries one promo card (`ARTICLE_PROMO` in `build.py`, wrapped in
+`<!-- win-chat-promo:start -->` / `:end -->` so a rebuild replaces it in
+place). `promo_position()` puts it at the section break nearest the middle of
+the body: directly before the top-level H2 whose start is closest to 50% of the
+body length, never before the end of the second paragraph and never after the
+last H2. Posts with fewer than two H2s get it after the top-level paragraph
+nearest the midpoint under the same limits. Blocks inside lists, tables,
+quotes and code are ignored. The card styles (`ARTICLE_PROMO_CSS`) ship in the
+shared head block. The lint fails if a post has anything other than exactly one
+card, or if the card turns up on a page that is not a post.
 
 ## Promo banner
 
