@@ -19,7 +19,8 @@ Outputs (generator-owned, never hand edit)
   sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
   the shared head block (og:image, twitter card, RSS link, favicon and app
   icon links, web app manifest, theme-color, mobile navigation styles and
-  script, ProfessionalService and Person JSON-LD) on every HTML page
+  script, the Win Chat promo banner styles and script, ProfessionalService and
+  Person JSON-LD) on every HTML page
   the analytics block (GA4 with Consent Mode defaults and the cookie consent
   bar) right after the viewport meta on every HTML page
 
@@ -80,6 +81,9 @@ AUTHOR_BOX_END = "<!-- author-box:end -->"
 HEAD_START = "<!-- soulstone-head:start -->"
 HEAD_END = "<!-- soulstone-head:end -->"
 
+# The Win Chat page: highlighted in both menus and announced by the promo banner.
+WIN_CHAT_PATH = "/win-chat/"
+
 # Mobile navigation. The markup (toggle button and #site-menu panel) lives in the
 # header of every page and in the SiteHeader bundle so hydration keeps it. The
 # styles, the no-JS fallback and the toggle script ship in the shared head block.
@@ -108,6 +112,13 @@ NAV_CSS = (
     "@media (max-width:63.9375rem){.ss-nav-panel[data-state=open]{display:block}}"
     "@media (min-width:40rem){.ss-nav-panel .ss-nav-cta{display:none}}"
     "@media (min-width:64rem){.ss-nav-toggle,.ss-nav-panel{display:none}header nav.ss-nav-desktop{display:flex}}"
+    # Win Chat is highlighted in both menus: accent colour and a small dot. Keyed on
+    # the href so the link carries the same classes as its neighbours and React's
+    # hydration output matches the server markup.
+    f'header .ss-nav-desktop a[href="{WIN_CHAT_PATH}"],.ss-nav-panel a[href="{WIN_CHAT_PATH}"]{{display:inline-flex;align-items:center;gap:.5rem;color:var(--ploy-accent-primary)}}'
+    f'.ss-nav-panel a[href="{WIN_CHAT_PATH}"]{{display:flex}}'
+    f'header .ss-nav-desktop a[href="{WIN_CHAT_PATH}"]:hover,.ss-nav-panel a[href="{WIN_CHAT_PATH}"]:hover{{color:var(--ploy-accent-primary);opacity:.8}}'
+    f'header .ss-nav-desktop a[href="{WIN_CHAT_PATH}"]::before,.ss-nav-panel a[href="{WIN_CHAT_PATH}"]::before{{content:"";flex:none;width:.375rem;height:.375rem;border-radius:9999px;background:currentColor}}'
 )
 NAV_NOSCRIPT_CSS = (
     ".ss-nav-toggle{display:none}"
@@ -129,6 +140,61 @@ NAV_JS = (
     "})();"
 )
 NAV_HEAD = f"<style>{NAV_CSS}</style><noscript><style>{NAV_NOSCRIPT_CSS}</style></noscript><script>{NAV_JS}</script>"
+
+# Promo banner for Win Chat. A slim fixed strip above the header on every page
+# except /win-chat/ itself, created by the script so there is no bar without
+# JavaScript. The html element gets .ss-promo-open before first paint (the
+# script runs in the head), which moves the fixed header down and pads the body
+# by the banner height, so nothing jumps when the banner is inserted at the top
+# of the body on DOMContentLoaded. Dismissal is stored in localStorage; the
+# consent bar lives at the bottom of the viewport, so the two never overlap.
+PROMO_KEY = "ss_promo_winchat"
+PROMO_CSS = (
+    "html.ss-promo-open{--ss-promo-h:2.75rem}"
+    "html.ss-promo-open body{padding-top:var(--ss-promo-h)}"
+    "html.ss-promo-open header.fixed{top:var(--ss-promo-h)}"
+    "html.ss-promo-open .ss-nav-panel{max-height:calc(100vh - 5rem - var(--ss-promo-h));max-height:calc(100dvh - 5rem - var(--ss-promo-h))}"
+    "html.ss-promo-open.ss-consent-open .ss-nav-panel{max-height:calc(100vh - 5rem - var(--ss-promo-h) - var(--ss-consent-h,6rem));max-height:calc(100dvh - 5rem - var(--ss-promo-h) - var(--ss-consent-h,6rem))}"
+    ".ss-promo{position:fixed;left:0;right:0;top:0;z-index:60;display:flex;align-items:center;gap:.5rem;min-height:2.75rem;padding:0 .25rem 0 1rem;"
+    "border-bottom:1px solid var(--ploy-border-primary);background:var(--ploy-background-primary);color:var(--ploy-text-primary);"
+    "font-family:var(--font-mono);font-size:.7rem;font-weight:500;line-height:1.4;letter-spacing:.12em;text-transform:uppercase}"
+    ".ss-promo-link{display:inline-flex;flex:1 1 auto;flex-wrap:wrap;align-items:center;justify-content:center;gap:0 .6em;min-height:2.75rem;padding:.4rem 0;"
+    "color:inherit;text-decoration:none;text-align:center}"
+    ".ss-promo-new,.ss-promo-cta{color:var(--ploy-accent-primary)}"
+    ".ss-promo-cta{text-decoration:underline;text-underline-offset:.3em;transition:opacity .2s}"
+    ".ss-promo-link:hover .ss-promo-cta{opacity:.8}"
+    ".ss-promo-close{display:inline-flex;flex:none;align-items:center;justify-content:center;width:2.75rem;height:2.75rem;border:0;border-radius:var(--radius-button);"
+    "background:transparent;color:var(--ploy-text-secondary);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .2s}"
+    ".ss-promo-close:hover{color:var(--ploy-text-primary)}"
+    ".ss-promo-close svg{display:block;width:1rem;height:1rem}"
+    ".ss-promo-link:focus-visible,.ss-promo-close:focus-visible{outline:2px solid var(--ploy-accent-primary);outline-offset:-2px}"
+    "@media (max-width:39.9375rem){.ss-promo-mid{display:none}}"
+    "@media (min-width:64rem){.ss-promo{padding-left:2.5rem;padding-right:1.75rem}}"
+)
+PROMO_JS = (
+    "(function(){if(window.__ssPromo)return;window.__ssPromo=1;"
+    f'var d=document,H=d.documentElement,K="{PROMO_KEY}",P="{WIN_CHAT_PATH}";'
+    'function off(){try{return localStorage.getItem(K)==="dismissed"}catch(e){return false}}'
+    'if(location.pathname.replace(/\\/+$/,"")+"/"===P||off())return;'
+    'H.classList.add("ss-promo-open");'
+    'function bar(){return d.getElementById("ss-promo")}'
+    'function size(){var b=bar();if(b)H.style.setProperty("--ss-promo-h",b.offsetHeight+"px")}'
+    'function hide(){var b=bar();if(b)b.remove();H.classList.remove("ss-promo-open");H.style.removeProperty("--ss-promo-h")}'
+    'function show(){if(bar()||!d.body)return;var b=d.createElement("div");b.id="ss-promo";b.className="ss-promo";'
+    'b.setAttribute("role","region");b.setAttribute("aria-label","Announcement");'
+    'b.innerHTML=\'<a href="\'+P+\'" class="ss-promo-link"><span class="ss-promo-new">New: Win Chat.</span>\''
+    '+\'<span class="ss-promo-mid">Get your brand recommended by ChatGPT, Perplexity and Google AI.</span>\''
+    '+\'<span class="ss-promo-cta">See how</span></a>\''
+    '+\'<button type="button" class="ss-promo-close" aria-label="Dismiss announcement">\''
+    '+\'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 4l12 12M16 4 4 16"></path></svg></button>\';'
+    "d.body.insertBefore(b,d.body.firstChild);size()}"
+    'd.addEventListener("click",function(e){var el=e.target;if(!el||!el.closest)return;'
+    'if(el.closest(".ss-promo-close")){try{localStorage.setItem(K,"dismissed")}catch(e){}hide()}});'
+    'window.addEventListener("resize",size);'
+    'if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",show);else show()'
+    "})();"
+)
+PROMO_HEAD = f"<style>{PROMO_CSS}</style><script>{PROMO_JS}</script>"
 # Favicon and app icons. The SVG carries a solid rounded-square background so
 # the mark reads on light and dark browser tabs; the ICO is the fallback for
 # browsers without SVG favicon support and Safari uses the apple-touch-icon.
@@ -818,6 +884,7 @@ def head_block(site: Site) -> str:
         f"{ICON_LINKS}"
         f'<meta name="theme-color" content="{esc(site.cfg["icons"]["theme_color"])}"/>'
         f"{NAV_HEAD}"
+        f"{PROMO_HEAD}"
         f"{HEAD_END}"
     )
 

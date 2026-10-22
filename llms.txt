@@ -10,6 +10,7 @@ Profiles: https://www.linkedin.com/in/maringerov, https://x.com/maringerov, http
 - [Shopify Plus architecture](https://soulstone.co/shopify-plus-architecture/): re-architecting complex Plus setups, app consolidation, performance.
 - [Results](https://soulstone.co/results/): anonymised case study of a premium Shopify Plus rebuild.
 - [FAQ](https://soulstone.co/faq/): fit, engagement model, teardown, how lift is measured.
+- [Win Chat](https://soulstone.co/win-chat/): getting Shopify brands found, cited and recommended in ChatGPT, Perplexity, Gemini, Claude and Google AI answers. Audit, Setup Sprint, Monitoring, or built into a new store. A separate practice from Soulstone that runs alongside the Shopify Plus development and architecture work.
 
 ## Journal
 - [No-nonsense Shopify development: take complexity out before you add more](https://soulstone.co/blog/no-nonsense-shopify-development/): Most overblown Shopify stacks don't need another app or a rebuild. Find who writes what, use what Shopify already runs, and ship small. Four rules I work by, with two real cases.
