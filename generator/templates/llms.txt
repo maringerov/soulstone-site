@@ -6,7 +6,7 @@ Contact: marin@soulstone.co. First step is a free 30-minute store teardown.
 Profiles: https://www.linkedin.com/in/maringerov, https://x.com/maringerov, https://www.linkedin.com/company/soulstone
 
 ## Services
-- [Freelance Shopify Plus developer in Amsterdam]({{origin}}/shopify-plus-developer-amsterdam/): who the work is for, services, process and FAQ.
+- [Independent Shopify Plus developer in Amsterdam]({{origin}}/shopify-plus-developer-amsterdam/): who the work is for, services, process and FAQ.
 - [Shopify Plus architecture]({{origin}}/shopify-plus-architecture/): re-architecting complex Plus setups, app consolidation, performance.
 - [Results]({{origin}}/results/): anonymised case study of a premium Shopify Plus rebuild.
 - [FAQ]({{origin}}/faq/): fit, engagement model, teardown, how lift is measured.
