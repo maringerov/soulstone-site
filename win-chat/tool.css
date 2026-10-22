@@ -61,6 +61,8 @@
 /* Result */
 .ss-ais-result{margin-top:4rem;border:1px solid color-mix(in oklab,var(--ploy-border-primary)60%,transparent);background:color-mix(in oklab,var(--ploy-background-primary)70%,transparent)}
 .ss-ais-result[hidden]{display:none}
+.ss-ais-example{display:flex;align-items:center;gap:.75rem;margin:0;min-height:3rem;padding:.75rem 1.5rem;background:var(--ploy-accent-primary);color:var(--ploy-button-primary-text);font-family:var(--font-body);font-size:1rem;font-weight:600;line-height:1.4}
+.ss-ais-example svg{flex:none;width:1.25rem;height:1.25rem}
 .ss-ais-result-head{display:grid;gap:1rem;padding:1.5rem;border-bottom:1px solid color-mix(in oklab,var(--ploy-border-primary)50%,transparent)}
 .ss-ais-result-head h3{margin:0;font-family:var(--font-heading);font-weight:400;font-size:1.5rem;line-height:1.2;letter-spacing:-.01em}
 .ss-ais-result-head h3 q{quotes:"\201C" "\201D"}
@@ -123,7 +125,7 @@
   .ss-ais-row{grid-template-columns:1fr 1fr}
   .ss-ais-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
   .ss-ais-result-head{grid-template-columns:1fr auto;align-items:end}
-  .ss-ais-result-head,.ss-ais-block,.ss-ais-share,.ss-ais-cta,.ss-ais-disclaimer{padding-left:2rem;padding-right:2rem}
+  .ss-ais-result-head,.ss-ais-block,.ss-ais-share,.ss-ais-cta,.ss-ais-disclaimer,.ss-ais-example{padding-left:2rem;padding-right:2rem}
   .ss-ais-cta{flex-direction:row;align-items:center;justify-content:space-between}
 }
 @media (min-width:64rem){

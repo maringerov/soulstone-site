@@ -27,6 +27,7 @@
   mount.dataset.ready = "1";
 
   var AUDIT_HREF = "mailto:marin@soulstone.co?subject=AI%20visibility%20audit";
+  var EXAMPLE_LABEL = "Example result: live answers coming soon";
   var DISCLAIMER = "This is one AI answer from one engine at one moment. Real assistants vary by user, location and time.";
   var CHIPS = ["refillable hand soap", "collagen face cream", "luxury candle gift"];
   var LIMITS = { queryMin: 3, queryMax: 200, brandMax: 60 };
@@ -417,6 +418,7 @@
     }
 
     result.innerHTML =
+      (isMock ? '<p class="ss-ais-example" role="note">' + icon("info") + '<span>' + esc(EXAMPLE_LABEL) + '</span></p>' : "") +
       '<div class="ss-ais-result-head">' +
         '<div><h3 id="ss-ais-result-title">What AI would likely say about <q>' + esc(r.query) + '</q></h3></div>' +
         '<p class="ss-ais-meta">Engine: ' + esc(r.engine) + ' · Checked ' + esc(fmtDate(r.checked_at)) + ' · Estimate</p>' +
@@ -478,7 +480,8 @@
       linkedin: '<path d="M6 9v12M6 5v.01M11 21v-7a3 3 0 0 1 6 0v7M11 9v12"/>',
       x: '<path d="M4 4l16 16M20 4L4 20"/>',
       share: '<path d="M12 3v12M8 7l4-4 4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
-      image: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/>'
+      image: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/>',
+      info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>'
     };
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + paths[name] + '</svg>';
   }
@@ -585,10 +588,23 @@
       ctx.textBaseline = "alphabetic";
       ctx.fillText(("What would AI say?  ·  soulstone.co/win-chat").toUpperCase(), 72, 116);
 
+      if (isMock) {
+        ctx.font = "600 17px " + mono;
+        var label = EXAMPLE_LABEL.toUpperCase();
+        var lw = ctx.measureText(label).width + 56;
+        var lx = W - 72 - lw, ly = 84, lh = 48;
+        ctx.fillStyle = accent;
+        ctx.fillRect(lx, ly, lw, lh);
+        ctx.fillStyle = bg;
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, lx + 28, ly + lh / 2 + 1);
+        ctx.textBaseline = "alphabetic";
+      }
+
       ctx.fillStyle = text;
       ctx.font = "400 54px " + heading;
       var lines = wrapText(ctx, "\u201C" + r.query + "\u201D", W - 144, 2);
-      var y = 190;
+      var y = isMock ? 212 : 190;
       lines.forEach(function (l) { ctx.fillText(l, 72, y); y += 64; });
 
       var st = r.stats || {};
