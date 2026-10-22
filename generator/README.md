@@ -148,6 +148,26 @@ returns focus, a tap on a link or outside the panel closes). React does not own
 that state, so hydration and the scroll re-render leave it alone. The lint
 fails if a page lacks the toggle, the panel or the script.
 
+The `Win Chat` link (`/win-chat/`) is the last item in both menus. It carries
+the same classes as its neighbours; the accent colour and the dot come from
+`NAV_CSS`, keyed on the href, so the server markup and the hydrated tree stay
+identical. It lives in the same three places as the rest of the header (static
+pages, templates, the `$o` default links in the SiteHeader bundle and the
+`links:` props in the three `page.*.js` bundles). The lint fails if a page
+lacks it in either menu.
+
+## Promo banner
+
+The build writes the Win Chat promo banner styles and script (`PROMO_CSS`,
+`PROMO_JS` in `build.py`) into the shared head block. The script skips
+`/win-chat/` itself and anyone who has dismissed the banner (localStorage
+`ss_promo_winchat`), otherwise it adds `.ss-promo-open` to the html element
+before first paint (moving the fixed header down and padding the body) and
+inserts the `#ss-promo` strip at the top of the body on `DOMContentLoaded`.
+The link and the dismiss button are both at least 44px tall. The consent bar
+sits at the bottom of the viewport, so the two never overlap. With JavaScript
+off there is no banner. The lint fails if a page lacks the script.
+
 ## Site footer
 
 The footer markup is not generated either. It lives in every static page, in

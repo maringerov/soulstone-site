@@ -10,8 +10,9 @@ Fails on
   * pages missing og:image, a large twitter card, the RSS link, the favicon
     links (SVG, ICO fallback, apple-touch-icon, manifest, theme-color), the
     mobile menu (toggle button, #site-menu panel and the toggle script), the
-    GA4 tag with its denied consent default, the cookie consent script or the
-    footer link to /privacy
+    Win Chat link in the desktop nav and the mobile menu, the promo banner
+    script, the GA4 tag with its denied consent default, the cookie consent
+    script or the footer link to /privacy
   * a leftover Ploy starter favicon link (type="image/x-icon")
   * icon files referenced from the head or site.webmanifest that do not exist
   * leftover {{placeholders}} from the templates
@@ -169,6 +170,9 @@ def main() -> int:
                             ('<button type="button" class="ss-nav-toggle" aria-expanded="false" aria-controls="site-menu">', "mobile menu toggle"),
                             ('<nav id="site-menu" class="ss-nav-panel" data-state="closed"', "mobile menu panel"),
                             ("window.__ssNav", "mobile menu script"),
+                            ('<a href="/win-chat/" class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Win Chat</a></nav>', "Win Chat link in the desktop nav"),
+                            ('<li><a href="/win-chat/" class="ss-nav-link font-mono uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Win Chat</a></li></ul>', "Win Chat link in the mobile menu"),
+                            ("window.__ssPromo", "promo banner script"),
                             ('<script async src="https://www.googletagmanager.com/gtag/js?id=G-', "GA4 tag"),
                             ("gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'})", "GA4 consent default"),
                             ("window.__ssConsent", "cookie consent script"),
