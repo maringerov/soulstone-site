@@ -51,6 +51,13 @@ both places but not text drift between them.
    `.css`, `.md`, `.txt`, `.xml`, `.json`, `.yml`, `.py`, `.svg` and
    `.webmanifest` file.
 
+4. The build also fails on banned words (`BANNED_WORDS` in `build.py`,
+   case-insensitive, hyphenated spellings included). The site describes Marin
+   as an independent developer and never uses the usual label for a
+   self-employed contractor; write "independent Shopify Plus developer", "I
+   work directly with brands", or leave the label out. `generator/lint.py`
+   scans the same files as the dash check for the same words.
+
 ## What the build writes
 
 | Output | Source |
@@ -210,7 +217,7 @@ The Astro bundles under `_ploy_static/_astro/` are not rewritten; their
 
 ```sh
 python3 generator/build.py --check   # committed output matches a fresh build
-python3 generator/lint.py            # dashes in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS, llms.txt, GA4 tag, consent script, privacy link, trailing slashes
+python3 generator/lint.py            # dashes and banned words in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS, llms.txt, GA4 tag, consent script, privacy link, trailing slashes
 ```
 
 The lint fails if any canonical, `og:url`, hreflang, JSON-LD URL, sitemap

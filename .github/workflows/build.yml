@@ -23,7 +23,7 @@ jobs:
       - name: Install generator dependencies
         run: pip install -r generator/requirements.txt
 
-      - name: Build must succeed (fails on em or en dashes in posts)
+      - name: Build must succeed (fails on em or en dashes and banned words in posts)
         run: python3 generator/build.py
 
       - name: Committed output must match a fresh build
