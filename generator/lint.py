@@ -10,10 +10,13 @@ Fails on
   * pages missing og:image, a large twitter card, the RSS link, the favicon
     links (SVG, ICO fallback, apple-touch-icon, manifest, theme-color), the
     mobile menu (toggle button, #site-menu panel and the toggle script), the
-    GA4 tag with its denied consent default, the cookie consent script or the
-    footer link to /privacy
+    Win Chat link in the desktop nav and the mobile menu, the promo banner
+    script, the GA4 tag with its denied consent default, the cookie consent
+    script or the footer link to /privacy
   * a leftover Ploy starter favicon link (type="image/x-icon")
   * icon files referenced from the head or site.webmanifest that do not exist
+  * a blog post without exactly one in-article Win Chat promo card, or the
+    card on a page that is not a post
   * leftover {{placeholders}} from the templates
   * the Google Search Console verification file changed, gained a trailing
     newline or ended up in the sitemap
@@ -50,6 +53,7 @@ GOOGLE_VERIFICATION = "googlef0ef0874c5fa4c80.html"
 GOOGLE_VERIFICATION_BODY = b"google-site-verification: googlef0ef0874c5fa4c80.html"
 ORIGIN = json.loads((REPO / "generator" / "site.json").read_text(encoding="utf-8"))["origin"].rstrip("/")
 JSONLD_URL_KEYS = {"url", "@id", "item", "mainEntityOfPage"}
+ARTICLE_PROMO_START = "<!-- win-chat-promo:start -->"
 
 
 def pages() -> list[Path]:
@@ -169,6 +173,9 @@ def main() -> int:
                             ('<button type="button" class="ss-nav-toggle" aria-expanded="false" aria-controls="site-menu">', "mobile menu toggle"),
                             ('<nav id="site-menu" class="ss-nav-panel" data-state="closed"', "mobile menu panel"),
                             ("window.__ssNav", "mobile menu script"),
+                            ('<a href="/win-chat/" class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Win Chat</a></nav>', "Win Chat link in the desktop nav"),
+                            ('<li><a href="/win-chat/" class="ss-nav-link font-mono uppercase tracking-[0.18em] text-ploy-text-secondary transition-colors hover:text-ploy-text-primary">Win Chat</a></li></ul>', "Win Chat link in the mobile menu"),
+                            ("window.__ssPromo", "promo banner script"),
                             ('<script async src="https://www.googletagmanager.com/gtag/js?id=G-', "GA4 tag"),
                             ("gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'})", "GA4 consent default"),
                             ("window.__ssConsent", "cookie consent script"),
@@ -204,6 +211,13 @@ def main() -> int:
                 errors.append(f"{rel}: datePublished {future} is after today ({TODAY})")
         if 'type="image/x-icon"' in h:
             errors.append(f"{rel}: old Ploy favicon link still present")
+        is_post = page.parent.parent == REPO / "blog"
+        promos = h.count(ARTICLE_PROMO_START)
+        asides = h.count('<aside class="not-prose ss-article-promo" aria-label="Win Chat">')
+        if is_post and (promos != 1 or asides != 1):
+            errors.append(f"{rel}: every post needs exactly one Win Chat promo card, found {promos} marker(s) and {asides} aside(s)")
+        if not is_post and (promos or asides):
+            errors.append(f"{rel}: Win Chat promo card belongs in posts only")
         if re.search(r"\{\{[a-z_]+\}\}", h):
             errors.append(f"{rel}: unfilled template placeholder")
         for m in re.finditer(r"PLACEHOLDER[^<\"]*", h):

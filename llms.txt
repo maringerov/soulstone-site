@@ -10,8 +10,10 @@ Profiles: https://www.linkedin.com/in/maringerov, https://x.com/maringerov, http
 - [Shopify Plus architecture](https://soulstone.co/shopify-plus-architecture/): re-architecting complex Plus setups, app consolidation, performance.
 - [Results](https://soulstone.co/results/): anonymised case study of a premium Shopify Plus rebuild.
 - [FAQ](https://soulstone.co/faq/): fit, engagement model, teardown, how lift is measured.
+- [Win Chat](https://soulstone.co/win-chat/): getting Shopify brands found, cited and recommended in ChatGPT, Perplexity, Gemini, Claude and Google AI answers. Audit, Setup Sprint, Monitoring, or built into a new store. A separate practice from Soulstone that runs alongside the Shopify Plus development and architecture work.
 
 ## Journal
+- [No-nonsense Shopify development: take complexity out before you add more](https://soulstone.co/blog/no-nonsense-shopify-development/): Most overblown Shopify stacks don't need another app or a rebuild. Find who writes what, use what Shopify already runs, and ship small. Four rules I work by, with two real cases.
 - [How do I migrate to checkout extensibility after checkout.liquid and Additional scripts?](https://soulstone.co/blog/checkout-extensibility-migration-tracking/): Tracking moves to Customer events, visible changes move to UI extensions, and theme code never runs in checkout. The 15-minute check and the fixes.
 - [The price keeps reverting. The theme is not the problem.](https://soulstone.co/blog/price-keeps-reverting-theme-not-the-problem/): A sale price came back overnight after a manual fix. How I traced the real writer in Shopify, and why I map every writer before touching code.
 - [owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy](https://soulstone.co/blog/checkout-extension-metafields-owner-type/): From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check.

@@ -13,13 +13,16 @@ Sources
   generator/templates/  HTML templates cut from the Ploy export.
 
 Outputs (generator-owned, never hand edit)
-  blog/<slug>/index.html for every Markdown post
+  blog/<slug>/index.html for every Markdown post, each with one in-article
+    Win Chat promo card at the section break nearest the middle of the body
+    (legacy posts get the same card in place)
   <path>/index.html for every Markdown page
   blog/index.html, tag/<tag>/index.html
   sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
   the shared head block (og:image, twitter card, RSS link, favicon and app
   icon links, web app manifest, theme-color, mobile navigation styles and
-  script, ProfessionalService and Person JSON-LD) on every HTML page
+  script, the Win Chat promo banner styles and script, ProfessionalService and
+  Person JSON-LD) on every HTML page
   the analytics block (GA4 with Consent Mode defaults and the cookie consent
   bar) right after the viewport meta on every HTML page
 
@@ -80,6 +83,9 @@ AUTHOR_BOX_END = "<!-- author-box:end -->"
 HEAD_START = "<!-- soulstone-head:start -->"
 HEAD_END = "<!-- soulstone-head:end -->"
 
+# The Win Chat page: highlighted in both menus and announced by the promo banner.
+WIN_CHAT_PATH = "/win-chat/"
+
 # Mobile navigation. The markup (toggle button and #site-menu panel) lives in the
 # header of every page and in the SiteHeader bundle so hydration keeps it. The
 # styles, the no-JS fallback and the toggle script ship in the shared head block.
@@ -108,6 +114,13 @@ NAV_CSS = (
     "@media (max-width:63.9375rem){.ss-nav-panel[data-state=open]{display:block}}"
     "@media (min-width:40rem){.ss-nav-panel .ss-nav-cta{display:none}}"
     "@media (min-width:64rem){.ss-nav-toggle,.ss-nav-panel{display:none}header nav.ss-nav-desktop{display:flex}}"
+    # Win Chat is highlighted in both menus: accent colour and a small dot. Keyed on
+    # the href so the link carries the same classes as its neighbours and React's
+    # hydration output matches the server markup.
+    f'header .ss-nav-desktop a[href="{WIN_CHAT_PATH}"],.ss-nav-panel a[href="{WIN_CHAT_PATH}"]{{display:inline-flex;align-items:center;gap:.5rem;color:var(--ploy-accent-primary)}}'
+    f'.ss-nav-panel a[href="{WIN_CHAT_PATH}"]{{display:flex}}'
+    f'header .ss-nav-desktop a[href="{WIN_CHAT_PATH}"]:hover,.ss-nav-panel a[href="{WIN_CHAT_PATH}"]:hover{{color:var(--ploy-accent-primary);opacity:.8}}'
+    f'header .ss-nav-desktop a[href="{WIN_CHAT_PATH}"]::before,.ss-nav-panel a[href="{WIN_CHAT_PATH}"]::before{{content:"";flex:none;width:.375rem;height:.375rem;border-radius:9999px;background:currentColor}}'
 )
 NAV_NOSCRIPT_CSS = (
     ".ss-nav-toggle{display:none}"
@@ -129,6 +142,88 @@ NAV_JS = (
     "})();"
 )
 NAV_HEAD = f"<style>{NAV_CSS}</style><noscript><style>{NAV_NOSCRIPT_CSS}</style></noscript><script>{NAV_JS}</script>"
+
+# Promo banner for Win Chat. A slim fixed strip above the header on every page
+# except /win-chat/ itself, created by the script so there is no bar without
+# JavaScript. The html element gets .ss-promo-open before first paint (the
+# script runs in the head), which moves the fixed header down and pads the body
+# by the banner height, so nothing jumps when the banner is inserted at the top
+# of the body on DOMContentLoaded. Dismissal is stored in localStorage; the
+# consent bar lives at the bottom of the viewport, so the two never overlap.
+PROMO_KEY = "ss_promo_winchat"
+PROMO_CSS = (
+    "html.ss-promo-open{--ss-promo-h:2.75rem}"
+    "html.ss-promo-open body{padding-top:var(--ss-promo-h)}"
+    "html.ss-promo-open header.fixed{top:var(--ss-promo-h)}"
+    "html.ss-promo-open .ss-nav-panel{max-height:calc(100vh - 5rem - var(--ss-promo-h));max-height:calc(100dvh - 5rem - var(--ss-promo-h))}"
+    "html.ss-promo-open.ss-consent-open .ss-nav-panel{max-height:calc(100vh - 5rem - var(--ss-promo-h) - var(--ss-consent-h,6rem));max-height:calc(100dvh - 5rem - var(--ss-promo-h) - var(--ss-consent-h,6rem))}"
+    ".ss-promo{position:fixed;left:0;right:0;top:0;z-index:60;display:flex;align-items:center;gap:.5rem;min-height:2.75rem;padding:0 .25rem 0 1rem;"
+    "border-bottom:1px solid var(--ploy-border-primary);background:var(--ploy-background-primary);color:var(--ploy-text-primary);"
+    "font-family:var(--font-mono);font-size:.7rem;font-weight:500;line-height:1.4;letter-spacing:.12em;text-transform:uppercase}"
+    ".ss-promo-link{display:inline-flex;flex:1 1 auto;flex-wrap:wrap;align-items:center;justify-content:center;gap:0 .6em;min-height:2.75rem;padding:.4rem 0;"
+    "color:inherit;text-decoration:none;text-align:center}"
+    ".ss-promo-new,.ss-promo-cta{color:var(--ploy-accent-primary)}"
+    ".ss-promo-cta{text-decoration:underline;text-underline-offset:.3em;transition:opacity .2s}"
+    ".ss-promo-link:hover .ss-promo-cta{opacity:.8}"
+    ".ss-promo-close{display:inline-flex;flex:none;align-items:center;justify-content:center;width:2.75rem;height:2.75rem;border:0;border-radius:var(--radius-button);"
+    "background:transparent;color:var(--ploy-text-secondary);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .2s}"
+    ".ss-promo-close:hover{color:var(--ploy-text-primary)}"
+    ".ss-promo-close svg{display:block;width:1rem;height:1rem}"
+    ".ss-promo-link:focus-visible,.ss-promo-close:focus-visible{outline:2px solid var(--ploy-accent-primary);outline-offset:-2px}"
+    "@media (max-width:39.9375rem){.ss-promo-mid{display:none}}"
+    "@media (min-width:64rem){.ss-promo{padding-left:2.5rem;padding-right:1.75rem}}"
+)
+PROMO_JS = (
+    "(function(){if(window.__ssPromo)return;window.__ssPromo=1;"
+    f'var d=document,H=d.documentElement,K="{PROMO_KEY}",P="{WIN_CHAT_PATH}";'
+    'function off(){try{return localStorage.getItem(K)==="dismissed"}catch(e){return false}}'
+    'if(location.pathname.replace(/\\/+$/,"")+"/"===P||off())return;'
+    'H.classList.add("ss-promo-open");'
+    'function bar(){return d.getElementById("ss-promo")}'
+    'function size(){var b=bar();if(b)H.style.setProperty("--ss-promo-h",b.offsetHeight+"px")}'
+    'function hide(){var b=bar();if(b)b.remove();H.classList.remove("ss-promo-open");H.style.removeProperty("--ss-promo-h")}'
+    'function show(){if(bar()||!d.body)return;var b=d.createElement("div");b.id="ss-promo";b.className="ss-promo";'
+    'b.setAttribute("role","region");b.setAttribute("aria-label","Announcement");'
+    'b.innerHTML=\'<a href="\'+P+\'" class="ss-promo-link"><span class="ss-promo-new">New: Win Chat.</span>\''
+    '+\'<span class="ss-promo-mid">Get your brand recommended by ChatGPT, Perplexity and Google AI.</span>\''
+    '+\'<span class="ss-promo-cta">See how</span></a>\''
+    '+\'<button type="button" class="ss-promo-close" aria-label="Dismiss announcement">\''
+    '+\'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 4l12 12M16 4 4 16"></path></svg></button>\';'
+    "d.body.insertBefore(b,d.body.firstChild);size()}"
+    'd.addEventListener("click",function(e){var el=e.target;if(!el||!el.closest)return;'
+    'if(el.closest(".ss-promo-close")){try{localStorage.setItem(K,"dismissed")}catch(e){}hide()}});'
+    'window.addEventListener("resize",size);'
+    'if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",show);else show()'
+    "})();"
+)
+PROMO_HEAD = f"<style>{PROMO_CSS}</style><script>{PROMO_JS}</script>"
+
+# In-article Win Chat promo. One card per blog post, placed by the build at the
+# section break nearest the middle of the body (see promo_position). The markup
+# is wrapped in markers so a rebuild replaces it in place, and it carries
+# not-prose so the typography plugin leaves it alone.
+ARTICLE_PROMO_START = "<!-- win-chat-promo:start -->"
+ARTICLE_PROMO_END = "<!-- win-chat-promo:end -->"
+ARTICLE_PROMO_CSS = (
+    ".ss-article-promo{margin:3rem 0;padding:1.5rem;border:1px solid color-mix(in oklab,var(--ploy-accent-primary)40%,transparent);"
+    "border-top:2px solid var(--ploy-accent-primary);background:color-mix(in oklab,var(--ploy-neutral-secondary)92%,transparent)}"
+    ".ss-article-promo .ss-article-promo-cta{width:100%}"
+    "@media (min-width:40rem){.ss-article-promo{padding:2rem}.ss-article-promo .ss-article-promo-cta{width:auto}}"
+    "@media (min-width:64rem){.ss-article-promo{margin:3.5rem 0;padding:2.5rem}}"
+)
+ARTICLE_PROMO = (
+    f"{ARTICLE_PROMO_START}"
+    f'<aside class="not-prose ss-article-promo" aria-label="Win Chat">'
+    '<p class="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-ploy-accent-primary">Win Chat</p>'
+    '<p class="mt-4 font-heading text-2xl leading-tight tracking-tight text-ploy-text-primary sm:text-3xl">Is AI recommending your brand?</p>'
+    '<p class="mt-4 max-w-xl leading-relaxed text-ploy-text-secondary">We get Shopify brands found and recommended in ChatGPT, Perplexity, Gemini and Google AI Overviews.</p>'
+    f'<a href="{WIN_CHAT_PATH}" class="ss-article-promo-cta mt-8 inline-flex items-center justify-center gap-2 whitespace-nowrap font-button uppercase tracking-[0.12em] font-semibold '
+    "transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ploy-accent-primary/60 "
+    'bg-ploy-accent-primary text-ploy-button-primary-text hover:bg-ploy-accent-primary-400 h-14 px-8 text-[0.8rem]">See how Win Chat works</a>'
+    "</aside>"
+    f"{ARTICLE_PROMO_END}"
+)
+ARTICLE_PROMO_HEAD = f"<style>{ARTICLE_PROMO_CSS}</style>"
 # Favicon and app icons. The SVG carries a solid rounded-square background so
 # the mark reads on light and dark browser tabs; the ICO is the fallback for
 # browsers without SVG favicon support and Safari uses the apple-touch-icon.
@@ -646,6 +741,76 @@ def upsert_author_box(site: Site, h: str, where: str) -> str:
     return h[:i] + box + " " + h[i:]
 
 
+PROSE_OPEN = re.compile(r'<div class="prose[^"]*">')
+BLOCK_TAG = re.compile(r"<(/?)(h2|p|ul|ol|blockquote|table|pre|figure|details|div|section)\b[^>]*>", re.I)
+CONTAINERS = {"ul", "ol", "blockquote", "table", "pre", "figure", "details", "div", "section"}
+
+
+def article_body_span(h: str, where: str) -> tuple[int, int]:
+    """Start and end of the post body: the inside of the prose div, up to the author box."""
+    m = PROSE_OPEN.search(h)
+    if not m:
+        raise BuildError(f"{where}: no prose container, cannot place the Win Chat promo")
+    stop = h.find(AUTHOR_BOX_START, m.end())
+    if stop < 0:
+        stop = h.find(TAGS_UL, m.end())
+    if stop < 0:
+        raise BuildError(f"{where}: author box or tag list not found after the prose container")
+    end = h.rfind("</div>", m.end(), stop)
+    if end < 0:
+        raise BuildError(f"{where}: prose container is not closed before the author box")
+    return m.end(), end
+
+
+def promo_position(body: str, where: str) -> int:
+    """Offset in body where the in-article promo goes.
+
+    Only top-level blocks count (nothing inside a list, table, quote or code
+    block). With two or more H2s the card sits at the section break nearest
+    the middle of the body, that is directly before the H2 whose start is
+    closest to 50% of the body length. It never goes before the end of the
+    second paragraph and, because the candidates are the H2s themselves, never
+    after the last H2. With fewer than two H2s it goes after the top-level
+    paragraph nearest the midpoint, again not before the second paragraph and,
+    where possible, not after the last H2.
+    """
+    depth = 0
+    h2_starts: list[int] = []
+    p_ends: list[int] = []
+    for m in BLOCK_TAG.finditer(body):
+        closing, tag = m.group(1) == "/", m.group(2).lower()
+        if tag in CONTAINERS:
+            depth += -1 if closing else 1
+            continue
+        if depth:
+            continue
+        if tag == "h2" and not closing:
+            h2_starts.append(m.start())
+        elif tag == "p" and closing:
+            p_ends.append(m.end())
+    if len(p_ends) < 2:
+        raise BuildError(f"{where}: fewer than two paragraphs, cannot place the Win Chat promo")
+    mid = len(body) / 2
+    floor = p_ends[1]
+    if len(h2_starts) >= 2:
+        breaks = [pos for pos in h2_starts if pos >= floor]
+        if breaks:
+            return min(breaks, key=lambda pos: abs(pos - mid))
+    cands = p_ends[1:]
+    if h2_starts:
+        cands = [pos for pos in cands if pos <= h2_starts[-1]] or cands
+    return min(cands, key=lambda pos: abs(pos - mid))
+
+
+def upsert_article_promo(h: str, where: str) -> str:
+    """Put exactly one Win Chat promo card in a post, replacing any earlier one."""
+    h = re.sub(re.escape(ARTICLE_PROMO_START) + ".*?" + re.escape(ARTICLE_PROMO_END) + r"\n?", "", h, flags=re.S)
+    start, end = article_body_span(h, where)
+    body = h[start:end]
+    at = start + promo_position(body, where)
+    return h[:at] + ARTICLE_PROMO + "\n" + h[at:]
+
+
 def page_jsonld(site: Site, name: str, description: str, url: str, extra: list[dict] | None = None) -> str:
     graph = [site.business_node(), site.person_node(), site.website_node(),
              {"@type": "WebPage", "name": name, "description": description, "url": url}]
@@ -818,6 +983,8 @@ def head_block(site: Site) -> str:
         f"{ICON_LINKS}"
         f'<meta name="theme-color" content="{esc(site.cfg["icons"]["theme_color"])}"/>'
         f"{NAV_HEAD}"
+        f"{PROMO_HEAD}"
+        f"{ARTICLE_PROMO_HEAD}"
         f"{HEAD_END}"
     )
 
@@ -945,16 +1112,17 @@ def build(root: Path, include_drafts: bool) -> dict:
 
     for p in md_posts:
         rel = f"blog/{p['slug']}/index.html"
-        page = render_post(site, p)
+        page = upsert_article_promo(render_post(site, p), rel)
         check_dashes(page, rel)
         write(rel, page)
         print(f"post   {rel}  <- {p['source']}")
     for p in legacy:
         rel = p["source"]
         page = upsert_author_box(site, (root / rel).read_text(encoding="utf-8"), rel)
+        page = upsert_article_promo(page, rel)
         check_dashes(page, rel)
         write(rel, page)
-        print(f"legacy {rel}  (author box refreshed, content kept)")
+        print(f"legacy {rel}  (author box and Win Chat promo refreshed, content kept)")
     for p in md_pages:
         rel = f"{p['path'].lstrip('/')}/index.html"
         page = render_page(site, p)

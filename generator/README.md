@@ -55,7 +55,7 @@ both places but not text drift between them.
 
 | Output | Source |
 |---|---|
-| `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html` |
+| `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html`, plus one in-article Win Chat promo card (`ARTICLE_PROMO` in `build.py`) placed by `promo_position()`; legacy posts get the same card in place |
 | `<path>/index.html` (for example `privacy/index.html`) | `pages/*.md` and `generator/templates/page.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
@@ -147,6 +147,39 @@ button (click, Enter and Space via the native button, Escape closes and
 returns focus, a tap on a link or outside the panel closes). React does not own
 that state, so hydration and the scroll re-render leave it alone. The lint
 fails if a page lacks the toggle, the panel or the script.
+
+The `Win Chat` link (`/win-chat/`) is the last item in both menus. It carries
+the same classes as its neighbours; the accent colour and the dot come from
+`NAV_CSS`, keyed on the href, so the server markup and the hydrated tree stay
+identical. It lives in the same three places as the rest of the header (static
+pages, templates, the `$o` default links in the SiteHeader bundle and the
+`links:` props in the three `page.*.js` bundles). The lint fails if a page
+lacks it in either menu.
+
+## In-article Win Chat promo
+
+Every post carries one promo card (`ARTICLE_PROMO` in `build.py`, wrapped in
+`<!-- win-chat-promo:start -->` / `:end -->` so a rebuild replaces it in
+place). `promo_position()` puts it at the section break nearest the middle of
+the body: directly before the top-level H2 whose start is closest to 50% of the
+body length, never before the end of the second paragraph and never after the
+last H2. Posts with fewer than two H2s get it after the top-level paragraph
+nearest the midpoint under the same limits. Blocks inside lists, tables,
+quotes and code are ignored. The card styles (`ARTICLE_PROMO_CSS`) ship in the
+shared head block. The lint fails if a post has anything other than exactly one
+card, or if the card turns up on a page that is not a post.
+
+## Promo banner
+
+The build writes the Win Chat promo banner styles and script (`PROMO_CSS`,
+`PROMO_JS` in `build.py`) into the shared head block. The script skips
+`/win-chat/` itself and anyone who has dismissed the banner (localStorage
+`ss_promo_winchat`), otherwise it adds `.ss-promo-open` to the html element
+before first paint (moving the fixed header down and padding the body) and
+inserts the `#ss-promo` strip at the top of the body on `DOMContentLoaded`.
+The link and the dismiss button are both at least 44px tall. The consent bar
+sits at the bottom of the viewport, so the two never overlap. With JavaScript
+off there is no banner. The lint fails if a page lacks the script.
 
 ## Site footer
 
