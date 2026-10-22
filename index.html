@@ -207,9 +207,9 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
 
   var BRANDS = [
     { id: 'noord', name: 'Noord Botanics', domain: 'noordbotanics.nl', own: true, share: 34, change8w: 6 },
-    { id: 'aesop', name: 'Aesop', domain: 'aesop.com', share: 31, change8w: -2 },
-    { id: 'rituals', name: 'Rituals', domain: 'rituals.com', share: 23, change8w: -3 },
-    { id: 'ecover', name: 'Ecover', domain: 'ecover.com', share: 12, change8w: -1 }
+    { id: 'berkhout', name: 'Berkhout Botanica', domain: 'berkhoutbotanica.com', share: 31, change8w: -2 },
+    { id: 'huis', name: 'Huis van Zeep', domain: 'huisvanzeep.nl', share: 23, change8w: -3 },
+    { id: 'groenwas', name: 'Groenwas', domain: 'groenwas.eu', share: 12, change8w: -1 }
   ];
 
   // Brands the engines also name but the panel does not track. Fictional, not counted in share of answer.
@@ -224,7 +224,7 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
   // Share of answer for Noord Botanics, oldest week first. 34% now, up 6 points on 8 weeks ago.
   var SHARE_TREND = [27, 27, 28, 28, 29, 30, 30, 31, 32, 32, 33, 34];
 
-  // [prompt, language, category, fit (0 to 1, how likely the brand is named), aesopFirst]
+  // [prompt, language, category, fit (0 to 1, how likely the brand is named), berkhoutFirst]
   var PROMPT_ROWS = [
     ['best refillable hand soap Netherlands', 'EN', 'Hand soap', 0.95],
     ['natural hand soap brands Amsterdam', 'EN', 'Hand soap', 0.9],
@@ -234,15 +234,15 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
     ['eco friendly dish soap that smells good', 'EN', 'Home', 0.15],
     ['luxury hand wash gift set under 50 euros', 'EN', 'Gifting', 0.7],
     ['refillable shampoo brands that ship to the Netherlands', 'EN', 'Hair', 0.45],
-    ['is Aesop hand soap worth the price', 'EN', 'Comparison', 0.5, true],
-    ['alternatives to Aesop Resurrection hand wash', 'EN', 'Comparison', 0.85, true],
+    ['is Berkhout Botanica hand soap worth the price', 'EN', 'Comparison', 0.5, true],
+    ['alternatives to Berkhout Botanica No. 3 hand wash', 'EN', 'Comparison', 0.85, true],
     ['best smelling hand cream for dry hands', 'EN', 'Body care', 0.5],
     ['sustainable bathroom products Dutch brands', 'EN', 'Body care', 0.8],
     ['vegan body lotion without palm oil', 'EN', 'Body care', 0.5],
     ['hand soap refill station near me Amsterdam', 'EN', 'Hand soap', 0.75],
     ['best body oil for winter skin Europe', 'EN', 'Body care', 0.35],
-    ['Rituals vs Aesop hand soap comparison', 'EN', 'Comparison', 0.4, true],
-    ['Dutch brands similar to Rituals', 'EN', 'Comparison', 0.7],
+    ['Huis van Zeep vs Berkhout Botanica hand soap comparison', 'EN', 'Comparison', 0.4, true],
+    ['Dutch brands similar to Huis van Zeep', 'EN', 'Comparison', 0.7],
     ['B Corp certified beauty brands Netherlands', 'EN', 'Body care', 0.6],
     ['zero waste body care starter kit', 'EN', 'Body care', 0.65],
     ['best unscented hand soap for eczema', 'EN', 'Hand soap', 0.4],
@@ -258,7 +258,7 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
     ['Nederlandse verzorgingsmerken duurzaam', 'NL', 'Body care', 0.75],
     ['cadeauset handzeep en handcreme', 'NL', 'Gifting', 0.65],
     ['beste afwasmiddel milieuvriendelijk', 'NL', 'Home', 0],
-    ['alternatief voor Rituals douchegel', 'NL', 'Comparison', 0.6],
+    ['alternatief voor Huis van Zeep douchegel', 'NL', 'Comparison', 0.6],
     ['plantaardige shampoo bar aanrader', 'NL', 'Hair', 0.35],
     ['handzeep met hervulbare fles aluminium', 'NL', 'Hand soap', 0.9],
     ['beste handcreme droge handen winter', 'NL', 'Body care', 0.45],
@@ -267,13 +267,13 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
     ['veganistische huidverzorging Nederlands merk', 'NL', 'Body care', 0.6],
     ['douchegel navulzak waar kopen', 'NL', 'Body care', 0.7],
     ['beste geurkaars en handzeep set', 'NL', 'Gifting', 0.45],
-    ['is Aesop handzeep zijn geld waard', 'NL', 'Comparison', 0.5, true],
+    ['is Berkhout Botanica handzeep zijn geld waard', 'NL', 'Comparison', 0.5, true],
     ['duurzaam badkamermerk Amsterdam', 'NL', 'Body care', 0.85],
     ['handzeep voor gevoelige huid zonder parfum', 'NL', 'Hand soap', 0.45],
     ['navulbare lichaamsverzorging abonnement', 'NL', 'Body care', 0.7],
     ['beste bodyscrub natuurlijk', 'NL', 'Body care', 0.35],
     ['wasmiddel zonder microplastics', 'NL', 'Home', 0],
-    ['Nederlands merk zoals Aesop', 'NL', 'Comparison', 0.85, true],
+    ['Nederlands merk zoals Berkhout Botanica', 'NL', 'Comparison', 0.85, true],
     ['handzeep in bulk voor kantoor', 'NL', 'Hand soap', 0.5],
     ['beste cadeau duurzame verzorging onder 50 euro', 'NL', 'Gifting', 0.6]
   ];
@@ -281,64 +281,64 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
   // Hand pinned runs. p01 is the example from the brief: mentioned in 3 of 5 engines, rank 2, own domain cited.
   var PINNED = {
     p01: {
-      chatgpt: { m: 1, rank: 2, cited: 1, named: ['aesop', 'rituals'] },
-      perplexity: { m: 1, rank: 2, cited: 1, named: ['aesop', 'rituals'] },
-      gemini: { m: 0, named: ['aesop', 'rituals'] },
-      claude: { m: 0, named: ['aesop', 'rituals', 'ecover'] },
-      aio: { m: 1, rank: 2, cited: 1, named: ['aesop', 'rituals'] }
+      chatgpt: { m: 1, rank: 2, cited: 1, named: ['berkhout', 'huis'] },
+      perplexity: { m: 1, rank: 2, cited: 1, named: ['berkhout', 'huis'] },
+      gemini: { m: 0, named: ['berkhout', 'huis'] },
+      claude: { m: 0, named: ['berkhout', 'huis', 'groenwas'] },
+      aio: { m: 1, rank: 2, cited: 1, named: ['berkhout', 'huis'] }
     }
   };
 
   // Citation source pool. w is the pick weight; brands lists which brands a page is about ([] means a category page).
   var SOURCES = [
     { domain: 'reddit.com', w: 9, action: 'Join the refill threads with a real answer, no pitch', pages: [
-      { path: '/r/Netherlands/comments/refillable_hand_soap', title: 'Refillable hand soap recommendations?', brands: ['noord', 'aesop', 'rituals'] },
-      { path: '/r/ZeroWaste/comments/amsterdam_refill_shops', title: 'Refill shops in Amsterdam, what do you use?', brands: ['noord', 'ecover'] },
-      { path: '/r/SkincareAddiction/comments/aesop_hand_wash_worth_it', title: 'Is the Aesop hand wash actually worth it?', brands: ['aesop', 'rituals'] },
+      { path: '/r/Netherlands/comments/refillable_hand_soap', title: 'Refillable hand soap recommendations?', brands: ['noord', 'berkhout', 'huis'] },
+      { path: '/r/ZeroWaste/comments/amsterdam_refill_shops', title: 'Refill shops in Amsterdam, what do you use?', brands: ['noord', 'groenwas'] },
+      { path: '/r/SkincareAddiction/comments/berkhout_hand_wash_worth_it', title: 'Is the Berkhout Botanica hand wash actually worth it?', brands: ['berkhout', 'huis'] },
       { path: '/r/thenetherlands/comments/handzeep_tips', title: 'Welke handzeep raden jullie aan?', brands: [] }
     ] },
     { domain: 'vogue.nl', w: 8, action: 'Pitch the refill range for the next best of list', pages: [
-      { path: '/beauty/beste-handzeep', title: 'De 12 beste handzepen van dit moment', brands: ['aesop', 'rituals', 'noord'] },
-      { path: '/beauty/duurzame-beautymerken-nederland', title: 'Duurzame beautymerken uit Nederland', brands: ['noord', 'rituals'] }
+      { path: '/beauty/beste-handzeep', title: 'De 12 beste handzepen van dit moment', brands: ['berkhout', 'huis', 'noord'] },
+      { path: '/beauty/duurzame-beautymerken-nederland', title: 'Duurzame beautymerken uit Nederland', brands: ['noord', 'huis'] }
     ] },
     { domain: 'beautyspot.nl', w: 6, action: 'Send test units for the next refill round up', pages: [
-      { path: '/test/navulbare-handzeep', title: 'Beste navulbare handzeep getest', brands: ['aesop', 'noord', 'rituals', 'ecover'] },
-      { path: '/gids/duurzame-badkamer', title: 'Zo maak je je badkamer duurzamer', brands: ['ecover', 'noord'] }
+      { path: '/test/navulbare-handzeep', title: 'Beste navulbare handzeep getest', brands: ['berkhout', 'noord', 'huis', 'groenwas'] },
+      { path: '/gids/duurzame-badkamer', title: 'Zo maak je je badkamer duurzamer', brands: ['groenwas', 'noord'] }
     ] },
-    { domain: 'aesop.com', w: 10, action: 'Competitor site, nothing to do', pages: [
-      { path: '/nl/p/body-hand/hand/resurrection-aromatique-hand-wash', title: 'Resurrection Aromatique Hand Wash', brands: ['aesop'] },
-      { path: '/nl/c/refills', title: 'Refills', brands: ['aesop'] }
+    { domain: 'berkhoutbotanica.com', w: 10, action: 'Competitor site, nothing to do', pages: [
+      { path: '/nl/p/hand/no-3-hand-wash', title: 'No. 3 Hand Wash', brands: ['berkhout'] },
+      { path: '/nl/c/refills', title: 'Refills', brands: ['berkhout'] }
     ] },
-    { domain: 'rituals.com', w: 4, action: 'Competitor site, nothing to do', pages: [
-      { path: '/nl-nl/refills', title: 'Navullingen', brands: ['rituals'] },
-      { path: '/nl-nl/handzeep', title: 'Handzeep en handcreme', brands: ['rituals'] }
+    { domain: 'huisvanzeep.nl', w: 4, action: 'Competitor site, nothing to do', pages: [
+      { path: '/nl-nl/refills', title: 'Navullingen', brands: ['huis'] },
+      { path: '/nl-nl/handzeep', title: 'Handzeep en handcreme', brands: ['huis'] }
     ] },
-    { domain: 'ecover.com', w: 3, action: 'Competitor site, nothing to do', pages: [
-      { path: '/nl/producten/handzeep', title: 'Handzeep navulling 5 liter', brands: ['ecover'] }
+    { domain: 'groenwas.eu', w: 3, action: 'Competitor site, nothing to do', pages: [
+      { path: '/nl/producten/handzeep', title: 'Handzeep navulling 5 liter', brands: ['groenwas'] }
     ] },
     { domain: 'debijenkorf.nl', w: 4, action: 'Ask the beauty buyer about a listing for the refill set', pages: [
-      { path: '/aesop-handzeep', title: 'Aesop handzeep', brands: ['aesop'] },
-      { path: '/rituals-navullingen', title: 'Rituals navullingen', brands: ['rituals'] }
+      { path: '/berkhout-botanica-handzeep', title: 'Berkhout Botanica handzeep', brands: ['berkhout'] },
+      { path: '/huis-van-zeep-navullingen', title: 'Huis van Zeep navullingen', brands: ['huis'] }
     ] },
     { domain: 'bol.com', w: 3, action: 'List the refill pouches on the marketplace', pages: [
-      { path: '/nl/rituals-douchegel-navulling', title: 'Rituals douchegel navulling', brands: ['rituals'] },
-      { path: '/nl/ecover-handzeep-5-liter', title: 'Ecover handzeep 5 liter', brands: ['ecover'] }
+      { path: '/nl/huis-van-zeep-douchegel-navulling', title: 'Huis van Zeep douchegel navulling', brands: ['huis'] },
+      { path: '/nl/groenwas-handzeep-5-liter', title: 'Groenwas handzeep 5 liter', brands: ['groenwas'] }
     ] },
     { domain: 'elle.nl', w: 3, action: 'Pitch the aluminium bottle story to the beauty desk', pages: [
-      { path: '/beauty/mooiste-handzeep-badkamer', title: 'De mooiste handzeep voor in de badkamer', brands: ['aesop', 'rituals'] }
+      { path: '/beauty/mooiste-handzeep-badkamer', title: 'De mooiste handzeep voor in de badkamer', brands: ['berkhout', 'huis'] }
     ] },
     { domain: 'consumentenbond.nl', w: 2, action: 'Submit the hand soap for the next test', pages: [
-      { path: '/handzeep/test', title: 'Handzeep test', brands: ['ecover', 'rituals'] }
+      { path: '/handzeep/test', title: 'Handzeep test', brands: ['groenwas', 'huis'] }
     ] },
     { domain: 'trustpilot.com', w: 1.5, action: 'Ask recent customers for reviews', pages: [
       { path: '/review/noordbotanics.nl', title: 'Noord Botanics reviews', brands: ['noord'] },
-      { path: '/review/rituals.com', title: 'Rituals reviews', brands: ['rituals'] }
+      { path: '/review/huisvanzeep.nl', title: 'Huis van Zeep reviews', brands: ['huis'] }
     ] },
     { domain: 'ekoplaza.nl', w: 2, action: 'Ask about a refill station pilot in Amsterdam stores', pages: [
-      { path: '/ecover-handzeep-navulling', title: 'Ecover handzeep navulling', brands: ['ecover'] }
+      { path: '/groenwas-handzeep-navulling', title: 'Groenwas handzeep navulling', brands: ['groenwas'] }
     ] },
     { domain: 'marieclaire.nl', w: 1, action: 'Offer the refill subscription for a feature', pages: [
-      { path: '/beauty/luxe-handzeep', title: 'Luxe handzeep die je badkamer upgradet', brands: ['aesop', 'noord'] }
+      { path: '/beauty/luxe-handzeep', title: 'Luxe handzeep die je badkamer upgradet', brands: ['berkhout', 'noord'] }
     ] },
     { domain: 'noordbotanics.nl', own: true, w: 0, action: '', pages: [
       { path: '/products/refillable-hand-soap-bergamot', title: 'Refillable hand soap, bergamot', brands: ['noord'] },
@@ -388,7 +388,7 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
   function buildDataset() {
     var rand = rng(20261019);
     var prompts = PROMPT_ROWS.map(function (r, i) {
-      return { id: 'p' + String(i + 1).padStart(2, '0'), text: r[0], lang: r[1], category: r[2], fit: r[3], aesopFirst: !!r[4], runs: {} };
+      return { id: 'p' + String(i + 1).padStart(2, '0'), text: r[0], lang: r[1], category: r[2], fit: r[3], berkhoutFirst: !!r[4], runs: {} };
     });
 
     function pickRank(p) {
@@ -447,8 +447,8 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
     // Phase 2: competitor mentions. Each competitor is named in exactly as many runs as its share of
     // answer implies relative to Noord Botanics, so the share bars add up to the brief's numbers.
     function compWeight(cid, p) {
-      if (cid === 'aesop') return p.aesopFirst ? 60 : p.category === 'Home' ? 0.1 : p.category === 'Comparison' ? 3 : 1;
-      if (cid === 'rituals') return p.category === 'Home' ? 0.3 : p.category === 'Comparison' ? 2 : p.category === 'Gifting' ? 2 : 1;
+      if (cid === 'berkhout') return p.berkhoutFirst ? 60 : p.category === 'Home' ? 0.1 : p.category === 'Comparison' ? 3 : 1;
+      if (cid === 'huis') return p.category === 'Home' ? 0.3 : p.category === 'Comparison' ? 2 : p.category === 'Gifting' ? 2 : 1;
       return p.category === 'Home' ? 60 : p.category === 'Hand soap' ? 1 : 0.5;
     }
     var ownShare = BRANDS.filter(function (b) { return b.own; })[0].share;
@@ -464,8 +464,8 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
     // Phase 3: brand order, rank, sentiment, samples, history and citations per run.
     function finishRun(p, run) {
       var e = run.engine, pin = run.pin, mentioned = run.mentioned;
-      var order = p.category === 'Home' ? ['ecover', 'rituals', 'aesop'] : ['aesop', 'rituals', 'ecover'];
-      if (!p.aesopFirst && p.category !== 'Home' && rand() < 0.3) { var t0 = order[0]; order[0] = order[1]; order[1] = t0; }
+      var order = p.category === 'Home' ? ['groenwas', 'huis', 'berkhout'] : ['berkhout', 'huis', 'groenwas'];
+      if (!p.berkhoutFirst && p.category !== 'Home' && rand() < 0.3) { var t0 = order[0]; order[0] = order[1]; order[1] = t0; }
       if (rand() < 0.25) { var t1 = order[1]; order[1] = order[2]; order[2] = t1; }
       var list = order.filter(function (id) { return run.named[id]; });
       var fillers = OTHER_BRANDS.map(function (b) { return { id: b.id, k: rand() }; }).sort(function (a, b) { return b.k - a.k; });
@@ -473,7 +473,7 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
       if (rand() < 0.2) list.push(fillers.shift().id);
       if (mentioned) {
         var rank = pin && pin.rank ? pin.rank : pickRank(p);
-        if (p.aesopFirst && rank === 1) rank = 2;
+        if (p.berkhoutFirst && rank === 1) rank = 2;
         rank = Math.min(rank, list.length + 1);
         list.splice(rank - 1, 0, 'noord');
       }
@@ -610,12 +610,12 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
   // ------------------------------------------------------------ answer text
   var BLURBS = {
     EN: {
-      noord: { positive: 'Noord Botanics is a Dutch brand from Amsterdam with refillable aluminium bottles, 1 litre refill pouches and plant based formulas. It sits in the premium tier but below Aesop on price, and reviewers like the bergamot and fig scents.',
-        neutral: 'Noord Botanics is a Dutch brand from Amsterdam with refillable aluminium bottles and 1 litre refill pouches. It is a premium product, priced below Aesop, with a small range of scents.',
+      noord: { positive: 'Noord Botanics is a Dutch brand from Amsterdam with refillable aluminium bottles, 1 litre refill pouches and plant based formulas. It sits in the premium tier but below Berkhout Botanica on price, and reviewers like the bergamot and fig scents.',
+        neutral: 'Noord Botanics is a Dutch brand from Amsterdam with refillable aluminium bottles and 1 litre refill pouches. It is a premium product, priced below Berkhout Botanica, with a small range of scents.',
         negative: 'Noord Botanics is a Dutch brand from Amsterdam with refillable aluminium bottles and 1 litre refill pouches. It is premium priced, and some reviewers find the scent range limited and the refills hard to get outside the Netherlands.' },
-      aesop: 'Aesop is the premium reference. The Resurrection Aromatique Hand Wash comes in a 500 ml refill and is stocked by most Dutch department stores.',
-      rituals: 'Rituals is the most widely available Dutch option, with refills for its best selling lines in almost every city.',
-      ecover: 'Ecover is the budget and eco pick, sold in 5 litre containers at organic supermarkets.',
+      berkhout: 'Berkhout Botanica is the premium reference. Its No. 3 Hand Wash comes in a 500 ml refill and is stocked by most Dutch department stores.',
+      huis: 'Huis van Zeep is the most widely available Dutch option, with refills for its best selling lines in almost every city.',
+      groenwas: 'Groenwas is the budget and eco pick, sold in 5 litre containers at organic supermarkets.',
       other: '{name} is a smaller brand that shows up in a few lists, mostly for its scents and packaging. Stock and shipping are limited.',
       intro: [
         'For "{q}", the brands that come up most often are {list}.',
@@ -626,12 +626,12 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
       claude: 'I cannot verify current stock or prices, so treat this as a starting point.'
     },
     NL: {
-      noord: { positive: 'Noord Botanics is een Amsterdams merk met navulbare aluminium flessen, navulzakken van 1 liter en plantaardige formules. Het zit in het premium segment maar is goedkoper dan Aesop, en de geuren bergamot en vijg worden vaak geprezen.',
-        neutral: 'Noord Botanics is een Amsterdams merk met navulbare aluminium flessen en navulzakken van 1 liter. Premium geprijsd, goedkoper dan Aesop, met een klein aantal geuren.',
+      noord: { positive: 'Noord Botanics is een Amsterdams merk met navulbare aluminium flessen, navulzakken van 1 liter en plantaardige formules. Het zit in het premium segment maar is goedkoper dan Berkhout Botanica, en de geuren bergamot en vijg worden vaak geprezen.',
+        neutral: 'Noord Botanics is een Amsterdams merk met navulbare aluminium flessen en navulzakken van 1 liter. Premium geprijsd, goedkoper dan Berkhout Botanica, met een klein aantal geuren.',
         negative: 'Noord Botanics is een Amsterdams merk met navulbare aluminium flessen en navulzakken van 1 liter. Het is premium geprijsd, en sommige reviewers vinden het aantal geuren beperkt en de navullingen buiten Nederland lastig te krijgen.' },
-      aesop: 'Aesop is de premium referentie. De Resurrection Aromatique Hand Wash is er als navulling van 500 ml en ligt bij de meeste warenhuizen.',
-      rituals: 'Rituals is de makkelijkst verkrijgbare Nederlandse optie, met navullingen voor de populairste lijnen in bijna elke stad.',
-      ecover: 'Ecover is de budget en eco keuze, in grootverpakking te koop bij biologische supermarkten.',
+      berkhout: 'Berkhout Botanica is de premium referentie. De No. 3 Hand Wash is er als navulling van 500 ml en ligt bij de meeste warenhuizen.',
+      huis: 'Huis van Zeep is de makkelijkst verkrijgbare Nederlandse optie, met navullingen voor de populairste lijnen in bijna elke stad.',
+      groenwas: 'Groenwas is de budget en eco keuze, in grootverpakking te koop bij biologische supermarkten.',
       other: '{name} is een kleiner merk dat in een paar lijstjes opduikt, vooral om de geuren en de verpakking. Voorraad en verzending zijn beperkt.',
       intro: [
         'Voor "{q}" worden {list} het vaakst genoemd.',
@@ -900,7 +900,7 @@ mark.wcd-brand-own{background:color-mix(in oklab,var(--ploy-accent-primary) 20%,
     }).join('') + '</ol>' : '<p class="wcd-empty">No sources returned.</p>';
     var claims = ['Refillable aluminium bottles', '1 litre refill pouches', 'Plant based', 'Made in Amsterdam'];
     var about = inSample ?
-      '<dl class="wcd-dl"><dt>Described as</dt><dd>' + (p.lang === 'NL' ? 'Amsterdams merk voor navulbare handzeep en lichaamsverzorging' : 'Dutch refillable hand soap and body care brand from Amsterdam') + '</dd><dt>Price tier</dt><dd>Premium, below Aesop</dd><dt>Claims picked up</dt><dd><span class="wcd-claims">' + claims.map(function (c) { return pill('neu', c); }).join('') + '</span></dd><dt>Sentiment</dt><dd>' + sentimentPill(run.sentiment) + '</dd><dt>Rank</dt><dd>' + rankInSample + ' of ' + brands.length + ' named brands</dd><dt>Own domain</dt><dd>' + (run.ownCited ? 'Cited' : 'Not cited') + '</dd><dt>Samples</dt><dd>Named in ' + run.samples.reduce(function (a, b) { return a + b; }, 0) + ' of 3</dd></dl>' :
+      '<dl class="wcd-dl"><dt>Described as</dt><dd>' + (p.lang === 'NL' ? 'Amsterdams merk voor navulbare handzeep en lichaamsverzorging' : 'Dutch refillable hand soap and body care brand from Amsterdam') + '</dd><dt>Price tier</dt><dd>Premium, below Berkhout Botanica</dd><dt>Claims picked up</dt><dd><span class="wcd-claims">' + claims.map(function (c) { return pill('neu', c); }).join('') + '</span></dd><dt>Sentiment</dt><dd>' + sentimentPill(run.sentiment) + '</dd><dt>Rank</dt><dd>' + rankInSample + ' of ' + brands.length + ' named brands</dd><dt>Own domain</dt><dd>' + (run.ownCited ? 'Cited' : 'Not cited') + '</dd><dt>Samples</dt><dd>Named in ' + run.samples.reduce(function (a, b) { return a + b; }, 0) + ' of 3</dd></dl>' :
       '<p style="margin-top:.75rem;color:var(--ploy-text-secondary)">Not named in this sample. Named brands: ' + esc(brands.map(function (b) { return brandById(b).name; }).join(', ')) + '.</p><dl class="wcd-dl"><dt>Samples</dt><dd>Named in ' + run.samples.reduce(function (a, b) { return a + b; }, 0) + ' of 3</dd><dt>Own domain</dt><dd>' + (run.ownCited ? 'Cited' : 'Not cited') + '</dd></dl>';
     var aside = '<div class="wcd-stack" style="margin-top:0"><section class="wcd-box"><h3 class="wcd-h3">What the AI says about you</h3>' + about + '</section><section class="wcd-card"><div class="wcd-card-head"><h3 class="wcd-h3">Cited sources</h3><span class="wcd-meta">' + run.citations.length + ' sources</span></div>' + cited + '</section></div>';
     var idx = DATA.prompts.indexOf(p);
