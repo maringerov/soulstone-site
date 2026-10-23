@@ -1,54 +1,72 @@
 ---
-title: "How do I customize Shopify checkout with checkout extensibility?"
+title: "How do I customize Shopify checkout with extensibility?"
 slug: customize-shopify-checkout-extensibility
-description: "Branding in the checkout and accounts editor, blocks from checkout UI extensions, rules in Shopify Functions, tracking in Customer events. What each layer does, what needs Plus, and the order I build in."
+description: "Visible changes go in checkout UI extensions, logic goes in Shopify Functions, looks go in the branding API. What each can do, and what needs Plus."
 date: 2026-10-23
 tags: [shopify, shopify-plus, checkout-extensibility, ui-extensions]
 faq_schema: true
 draft: false
 ---
 
-Short answer: Shopify checkout is customized in four layers, and each one has a fixed place. Branding (logo, colours, fonts, section styles) lives in the checkout and accounts editor in the admin. Anything the buyer sees or fills in that Shopify doesn't ship comes from a checkout UI extension, placed in the same editor as a block. Anything that changes what the buyer can buy, pay or choose for delivery is a Shopify Function. Tracking is an app pixel or a custom pixel in Customer events. Theme code, custom JavaScript and CSS have no place in checkout, and that is the point of the model.
+Short answer: every change you used to make in checkout.liquid now maps to one of four tools. Checkout UI extensions cover anything shoppers see, from a trust badge to a custom field. Shopify Functions cover logic: discounts, payment and delivery options, validation. Branding covers look and feel, in the checkout and accounts editor and, on Plus, through the branding API. Web pixels cover tracking. Shopify Plus stores can customize the Information, Shipping and Payment steps; the Thank you and Order status pages are open to every plan from Basic up.
 
-If you came here because a checkout.liquid or Additional scripts customization stopped working, start with [the migration check](/blog/checkout-extensibility-migration-tracking/). This post is for the next question: now that the old way is gone, how do you get the checkout you want?
+That split is the whole model. Once you know which tool a request belongs to, the work is usually small. Most of this post is a sorting guide, with the plan limits and the things the model refuses to do.
 
-## What are the four layers of checkout extensibility?
+## What replaced checkout.liquid?
 
-| Layer | What it changes | Where you work | Who can use it |
-|---|---|---|---|
-| Checkout and accounts editor | Logo, colours, fonts, section styles, which blocks sit where | Settings, Checkout, then Edit on a configuration | All plans from Basic up |
-| Checkout UI extensions | Banners, fields, notes, upsells, surveys, anything visible | A block from an app, placed in the editor | Information, shipping and payment steps: Shopify Plus. Thank you and Order status pages: all plans except Starter |
-| Shopify Functions | Discounts, delivery options, payment options, validation, bundles | Code in an app, configured from the admin | Public App Store apps: all plans except Starter. Custom apps with Functions: Shopify Plus |
-| Customer events | Analytics and ad tracking | Settings, Customer events, as an app pixel or custom pixel | All plans except Starter |
+Checkout.liquid let Plus stores edit the checkout template directly: any markup, any script, any style. It also broke at every Shopify update and made checkout hard to secure, so Shopify closed it. Plus stores moved to checkout extensibility in 2024 and 2025. For everyone else, the Additional scripts box and script tags on the Order status page stopped running on 26 August 2026. If something of yours went quiet then, start with [the migration check](/blog/checkout-extensibility-migration-tracking/).
 
-There is a fifth, smaller layer for Plus stores: the GraphQL Admin API. As of API version 2026-04 the Checkout and Accounts Configuration API replaced the older Checkout Branding API, and it gives you branding settings the editor doesn't expose, including per-market branding. On most stores I never touch it, because the editor covers what a brand needs.
+What replaced it is a set of extension points rather than a template:
 
-The reason the layers are strict is security. Each UI extension runs in a sandbox, separate from the checkout page and from other extensions, with no access to the page's HTML or to payment data. Functions run on Shopify's side with a hard time budget. That is what makes every customization upgrade-safe: Shopify can change checkout under you and your extensions keep working.
+- **Checkout UI extensions** render inside checkout as blocks. Each one runs in a sandbox, separate from the page and from other extensions, with no access to the page's HTML or to payment details. Merchants place them in the checkout and accounts editor.
+- **Shopify Functions** run on Shopify's side, in the discount, delivery, payment and validation steps of a purchase. They return a list of operations, never UI.
+- **Branding** lives in the checkout and accounts editor: logo, colours, fonts, corner radius, section styles. Plus stores get the rest through the GraphQL Admin API. As of API version 2026-04 that is the Checkout and Accounts Configuration API, which replaced the Checkout Branding API and applies one set of brand settings across checkout, customer accounts and sign-in.
+- **Web pixels** in Settings, Customer events, as app pixels or custom pixels, replace every tracking snippet.
 
-## What can I change without a developer?
+Nothing from your theme runs in checkout. App embeds and `theme.liquid` stop at the cart, by design, so Shopify can update checkout without breaking stores.
 
-More than most teams think. Before I write a line of code I check these three places.
+## Which tool do I use for which change?
 
-**The editor.** Settings, Checkout, Edit on the live configuration. Logo and its position, a colour palette, heading and body fonts, corner radius, the background of the header, the main area and the order summary. Since May 2026 those settings also apply to customer accounts and the sign-in page, so the brand holds together from cart to account. Duplicate the configuration before a big change and work in the draft, then publish.
+This is the table I keep open when a backlog of checkout requests lands on my desk.
 
-**Checkout settings.** The same Settings, Checkout page controls the contact method (email or phone), which address fields are optional or required, tipping, the marketing opt-in checkboxes and what happens after checkout. A surprising number of "we need a custom field" requests end here.
+| Change | Tool | Plan |
+|---|---|---|
+| A custom field (delivery slot, PO number, VAT ID) | Checkout UI extension, saved as a cart attribute or metafield | Plus on the checkout steps; all plans on Thank you and Order status |
+| A trust badge or returns note | Checkout UI extension, block target | Plus on the checkout steps; all plans after purchase |
+| A gift message | Checkout UI extension with a text field, saved as a line or cart attribute | Plus |
+| Hide a payment method above or below an amount | Shopify Function, payment customization | Public app on any plan; custom app on Plus |
+| Block a PO box address | Shopify Function, delivery customization or validation | Public app on any plan; custom app on Plus |
+| A free-shipping progress bar | Checkout UI extension, reads cart cost | Plus |
+| Fonts and colours | Checkout and accounts editor; branding API for the rest | Editor on all plans; API on Plus |
+| Purchase tracking for an ad platform | Web pixel in Customer events | All plans except Starter |
 
-**Apps with blocks.** Any App Store app built for checkout extensibility shows up in the editor as a block you drag into place. Delivery date pickers, gift messages, trust badges, upsells and surveys all exist as apps. On Plus, Shopify's own Checkout Blocks app covers a lot of content and conditional display without code.
+Two notes on the table. Blocking a PO box through delivery customization only works for rates from carrier services and third-party shipping apps; with Shopify's built-in rates the function may not get the address detail it needs, and a validation function on the address field is the safer route. And the payment customization can hide wallets like Shop Pay and Apple Pay, but can't rename them.
 
-Pick one app that does several of these, not five that do one each. Every checkout app is another vendor in the path of a purchase. I wrote about where that leads in [the hidden cost of app sprawl](/blog/hidden-cost-shopify-plus-app-sprawl/).
+## What can I change without Plus?
 
-## When do I need a checkout UI extension?
+More than most teams expect:
 
-When the buyer needs to see or enter something that no setting and no app covers. On the stores I work on the common cases are:
+- Everything in the checkout and accounts editor: logo, palette, fonts, backgrounds for the header, main area and order summary, and corner radius. Since May 2026 the same settings carry through to customer accounts and sign-in.
+- Checkout settings: contact method, which address fields are hidden, optional or required, tipping, the marketing opt-in checkboxes, and what happens after an order.
+- Apps with blocks on the Thank you and Order status pages: surveys, referral codes, order tracking, upsells through order editing.
+- Shopify Functions, as long as they come in a public App Store app. Many discount, shipping and payment apps are Functions underneath.
+- Web pixels, for any tracking.
 
-- A note under a line item that reads product data: refill instructions, a delivery lead time, a warning about a hazardous item.
-- A field the business needs on the order: a PO number for B2B, a preferred delivery slot, a gift message that goes to the warehouse.
-- A banner that depends on the cart: free shipping almost reached, a returns window for a sale item, a message for a market.
-- A thank you page block: a survey, a referral code, a link to a care guide.
+What stays behind the Plus line: blocks on the Information, Shipping and Payment steps, custom apps that contain Functions, and the branding API. If those are the things your business needs, the plan question is part of the architecture conversation, and I'd rather have it early. [Shopify Plus architecture](/shopify-plus-architecture/) covers how I approach that.
 
-An extension is a small piece of code in a custom app, built with the Shopify CLI. It targets a place in checkout. Block targets like `purchase.checkout.block.render` let the merchant position the block in the editor. Static targets like `purchase.checkout.cart-line-item.render-after` always render in one spot. The UI is built from Shopify's own components (`s-banner`, `s-text`, `s-text-field` and so on), so it inherits the branding from the editor and you can't make it look wrong.
+## How do I build a checkout UI extension?
 
-A banner with one merchant setting is this small. The TOML declares the target and a text setting:
+An extension is a small amount of code in a custom app, generated and deployed with the Shopify CLI. It uses Preact and Shopify's own components (`s-banner`, `s-text`, `s-text-field` and friends), so it inherits the branding from the editor and can't look out of place. Three decisions shape every extension.
+
+### Targets
+
+A target is the place in checkout where the extension renders. Block targets such as `purchase.checkout.block.render` let the merchant drag the block anywhere in the editor. Static targets such as `purchase.checkout.cart-line-item.render-after` or `purchase.checkout.delivery-address.render-before` always render next to one core feature, and disappear when that feature isn't shown (no shipping methods for pickup, for example). Thank you and Order status pages have their own targets, `purchase.thank-you.block.render` and `customer-account.order-status.block.render`.
+
+Pick a block target when the content stands on its own, a static target when it belongs to a line item, the address or the payment section.
+
+### Merchant settings
+
+Anything the team might want to change belongs in a setting, not in code. The extension declares its settings in `shopify.extension.toml` and reads them at runtime:
 
 ```toml
 api_version = "2026-10"
@@ -69,8 +87,6 @@ type = "ui_extension"
     name = "Notice text"
 ```
 
-And the component reads the setting the merchant typed in the editor:
-
 ```jsx
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
@@ -86,87 +102,78 @@ function Notice() {
 }
 ```
 
-The merchant places the block in the editor, types the text, and can change it on a Tuesday without a deploy. That is the pattern I aim for in every extension: the code decides how, the settings decide what.
+The merchant places the block, types the text in the editor, and changes it on a Tuesday without a deploy. The code decides how, the settings decide what.
 
-Extensions can also read cart lines, the buyer's identity and metafields on products, variants, the customer and the shop. If you declare metafields in the TOML, add `owner_type` to each one now; [it becomes required on API 2027-01](/blog/checkout-extension-metafields-owner-type/). To write data, an extension sets cart attributes, line item attributes or metafields, which land on the order where your warehouse and your ERP can read them.
+### Reading and saving data
 
-## When do I need a Shopify Function?
+Extensions read the cart lines, the cost, the buyer's identity, the delivery and payment selection, and metafields on the shop, products, variants, the customer and the cart. Metafields are the right way to get data into checkout: your app writes them ahead of time, and checkout reads them with no network call. If you declare metafields in the TOML, add `owner_type` to each declaration now, because [it becomes required on API 2027-01](/blog/checkout-extension-metafields-owner-type/).
 
-When the rule changes the outcome of the checkout rather than what it looks like:
+To save data, an extension writes cart attributes, line item attributes or metafields through `applyAttributeChange` and `applyMetafieldChange`. They land on the order, where the warehouse, the ERP and Flow can read them. Checkout UI extensions can also add, update and remove cart lines with `applyCartLinesChange`, which is how an upsell or an automatic gift works inside checkout. External network calls need the `network_access` capability and a request in the Partner Dashboard; use a metafield instead whenever you can.
 
-- A discount Shopify's admin can't express: a tiered gift, a discount that depends on a customer metafield, a bundle price.
-- Hiding, renaming or reordering payment methods: no cash on delivery above an amount, invoice payment for approved B2B customers only.
-- The same for delivery options: hide express shipping for bulky items, rename a rate per market.
-- Validation that blocks checkout: an order maximum, a product that can't ship to a country, a variant flagged as sold out before the warehouse count reaches zero.
-- Cart transforms: expand a bundle into its components or merge lines into one.
+## When do I need a Function?
 
-Functions run on Shopify's infrastructure, so there is no server of yours in the path of a purchase, nothing to host and nothing to keep awake. That is why I reach for them before a custom app with its own backend. [No-nonsense Shopify development](/blog/no-nonsense-shopify-development/) has a worked example: a validation function that blocks a flagged variant at checkout, reading the same flag the theme uses to show it as sold out.
+When the change alters the outcome of the checkout rather than how it looks:
 
-Two limits to know up front. Custom apps that contain Functions need Shopify Plus; on other plans you get Functions through public apps only. And a Function can change the price and presentation of lines in the cart, but it can't add a line. If you need a free gift to appear by itself, that is storefront or extension work, which I cover in [setting up a gift with purchase](/blog/shopify-gift-with-purchase-setup/).
+- A discount the admin can't express: a tiered gift, a price that depends on a customer metafield, a bundle.
+- Hiding, reordering or renaming payment methods: no cash on delivery above an amount, invoice payment for approved B2B customers only.
+- The same for delivery options: hide express for bulky items, rename a rate per market, hide options for PO boxes.
+- Validation that stops the buyer: an order maximum, a product that can't ship to a country, a variant flagged as sold out before the warehouse count reaches zero.
+- Cart transforms: expanding a bundle into its components or merging lines into one.
 
-## What can't checkout extensibility do?
+Functions run on Shopify's infrastructure, so there is no server of yours in the path of a purchase. They have a strict budget for how long they may run, and one that overruns fails instead of holding up checkout. That is why I reach for a Function before a custom app with its own backend.
 
-Knowing this saves a week of trying:
+Custom apps that contain Functions need Shopify Plus; on other plans you get Functions through public apps only. And a Function changes prices and presentation, never the contents of the cart: Cart Transform can expand, merge and update lines, but there is no operation to add one.
+
+## What can't it do?
+
+Knowing this up front saves a week:
 
 - No custom JavaScript or CSS on the checkout page, and no access to its DOM. If a request starts with "can we inject", the answer is no.
-- No removing or reordering Shopify's own fields and steps. You can make some fields optional or required in settings, and that is it.
-- No blocks on the information, shipping and payment steps without Plus. Non-Plus stores customize the Thank you and Order status pages only.
-- No adding a cart line from a Function. Cart Transform expands, merges and updates lines.
-- No changing the order from a Thank you page extension. The order doesn't exist yet at that moment; you have the order ID and can read it later.
-- Not every target renders in every express checkout. Test Shop Pay, Apple Pay and Google Pay separately and read the compatibility notes for the APIs you use.
-- Nothing from your theme. Theme app embeds and anything in `theme.liquid` stop at the cart.
+- No removing or reordering Shopify's own fields and steps. Some fields can be hidden or made optional in settings; that is the extent of it.
+- No changing Shopify's action buttons. Continue to payment and Pay now keep their labels and states.
+- No blocks on the Information, Shipping and Payment steps without Plus.
+- No adding a cart line from a Function, and no changing the order from a Thank you page extension, because the order doesn't exist yet at that moment.
+- Not everything renders in accelerated checkout. In Shop Pay an extension only shows if the merchant turns on "Include app in Shop Pay" for it in the editor. In Apple Pay and Google Pay sessions, cart line changes and some other writes return errors.
+- Nothing from the theme. The theme ends at the cart.
 
-## In what order should I build?
+## How do I test safely?
 
-The order matters because each step removes work from the next one.
+Checkout is the one page where a mistake costs orders by the minute, so I test the same way every time:
 
-1. Editor and settings first. Match the brand, set the fields, duplicate the configuration before you change anything else.
-2. Then one app with blocks, if an app already does what you need and you are willing to have it in checkout.
-3. Then a custom UI extension for the one thing that is left. Keep every value the team might change in a setting or a metafield.
-4. Then Functions for the rules.
-5. Tracking as pixels, from the start. Every tool that should know about a purchase gets an app pixel or a custom pixel in Customer events, nothing in the theme.
+1. Duplicate the live checkout configuration and work in the draft. Preview it in the editor and publish only when the list below is done.
+2. On a development store, or with Shopify Payments in test mode, place real test orders: a guest and a signed-in customer, each market and language the store sells in, a cart just under and just over every threshold an extension or Function uses.
+3. Walk the Information, Shipping and Payment steps on a phone, not only in the desktop preview. Then the Thank you page, and after a refresh the Order status page, which is a different target.
+4. Test accelerated checkout separately: Shop Pay with the extension enabled in the editor, then Apple Pay or Google Pay from the product page, which skips the cart.
+5. Check the order in the admin: the attributes, metafields and discounts you expected, with the names the warehouse integration reads.
+6. Confirm every tool in Customer events received the purchase, in the vendor's own event log, not only the pixel status in Shopify.
+7. Keep the previous configuration as a draft for a week after you publish, so rollback is one click.
 
-When I audit a checkout that was built in the other order, I usually find a custom extension doing something the editor could do, and a Function app installed for one discount the admin already supports.
-
-## How do I test a checkout customization?
-
-Work in a draft configuration and preview it in the editor. Then, on a development store or with the payment provider in test mode, place real test orders and check these:
-
-- A cart just under and just over every threshold you use.
-- The information, shipping and payment steps on a phone, not only in the desktop preview.
-- Express checkout from a product page, which skips the cart. Blocks and Functions that depend on a cart state behave differently there.
-- A guest buyer and a signed-in customer, because protected customer data only shows for the second one.
-- Each market and language the store sells in, if your extension or Function reads them.
-- The Thank you page and, after a refresh, the Order status page. They are different targets.
-- The order in the admin: the attributes, metafields and discounts you expected are there, with the names your warehouse integration reads.
-- Every tool in Customer events received the purchase. Check the vendor's own event log, not only the pixel's status in Shopify.
-
-Then publish the configuration and keep the previous one as a draft for a week, so you can roll back in one click.
+If you want to see how this plays out on real stores, the posts under [checkout extensibility](/tag/checkout-extensibility/) go through specific cases.
 
 ## FAQ
 
-### Can I customize Shopify checkout without Shopify Plus?
+### Can I still edit checkout.liquid?
 
-Yes, within limits. On every plan from Basic up you get the checkout and accounts editor for logo, colours, fonts and layout settings, apps that add blocks to the Thank you and Order status pages, Functions through public App Store apps, and pixels in Customer events. Blocks on the information, shipping and payment steps, custom apps with Functions and the Admin API for branding need Shopify Plus.
+No. Plus stores moved off checkout.liquid, and the Additional scripts box and script tags on the Order status page stopped running for other plans on 26 August 2026. Everything they did now belongs to a UI extension, a Function, a branding setting or a web pixel.
 
-### Do I need a custom app, or will an App Store app do?
+### Do I need Shopify Plus to customize checkout?
 
-Start with an App Store app if one does the job and you accept another vendor in checkout. Build a custom extension when the requirement is specific to your products or your operations, when you want the data to land in your own fields, or when the only app that fits brings ten features you don't need. A single custom extension is often less maintenance than an app.
+Not for branding, for Thank you and Order status page blocks, for Functions inside public apps, or for tracking. You do need Plus for blocks on the Information, Shipping and Payment steps, for custom apps with Functions, and for the branding API.
 
 ### Can I add a custom field to checkout?
 
-Yes. A checkout UI extension renders the field and saves the value as a cart attribute, a line item attribute or a metafield, so it appears on the order. On Plus the field can sit on any checkout step. On other plans it can only sit on the Thank you or Order status page, which works for surveys but not for information you need before payment.
+Yes. A checkout UI extension renders the field and saves the value as a cart attribute, a line item attribute or a metafield, so it appears on the order. On Plus it can sit on any checkout step. On other plans it can only sit on the Thank you or Order status page, which works for a survey but not for information you need before payment.
 
-### Will customizations slow my checkout down?
+### Can I hide or rename a payment or shipping method?
 
-Not if they are built the usual way. Extensions are loaded by Shopify in a sandbox, and Functions have a strict budget for how long they may run, so one that overruns fails instead of holding up the page. The thing to avoid is an extension that waits on a network call before it renders. Render first, fetch after, and show nothing rather than a spinner if the call fails.
+Yes, with a Shopify Function. Payment customizations hide, reorder and rename payment methods, with the exception that wallets such as Shop Pay, Apple Pay and Google Pay can be hidden but not renamed. Delivery customizations hide, reorder and rename shipping options. Hiding an option for PO box addresses only works with rates from carrier services and third-party shipping apps. On a non-Plus plan you get these through a public app; a custom one needs Plus.
 
-### Is checkout.liquid still an option anywhere?
+### Do UI extensions slow down checkout?
 
-No. Plus stores moved off checkout.liquid, and the Additional scripts box and script tags on the Order status page stopped running for everyone else on 26 August 2026. Everything they did now lives in the four layers above.
+Not when built the usual way. Shopify loads them in a sandbox alongside the page, and Functions have a hard run budget. The one thing to avoid is an extension that waits on an external network call before it renders. Read from metafields instead, and if a call is unavoidable, render first and fetch after.
 
-### Who maintains an extension once it is live?
+### Should I use an app or a custom extension?
 
-Whoever maintains the custom app, which means someone has to bump the API version about once a year and read the changelog for the targets you use. That is a few hours a year, and it is far less than what checkout.liquid used to cost at every Shopify update.
+Start with an App Store app if one does the job and you accept another vendor in checkout. Build a custom extension when the requirement is specific to your products or operations, when you want the data in your own fields, or when the only app that fits brings ten features you don't need. One custom extension is often less to maintain than an app, and every app in checkout is a cost you keep paying; [the hidden cost of app sprawl](/blog/hidden-cost-shopify-plus-app-sprawl/) has the long version.
 
-If your checkout still carries a workaround from the old model, or a request has been sitting in the backlog because nobody is sure which layer it belongs to, send it over. Sorting it into the right layer is usually a short conversation.
+If your backlog has checkout requests nobody has sorted into a tool yet, or a workaround from the checkout.liquid days is still in place, [I work directly with brands on exactly this](/shopify-plus-developer-amsterdam/). Sorting the list is usually a short conversation.

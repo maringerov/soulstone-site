@@ -1,54 +1,60 @@
 ---
-title: "How do I set up a gift with purchase on Shopify?"
+title: "How do I add a gift with purchase on Shopify?"
 slug: shopify-gift-with-purchase-setup
-description: "The Buy X get Y discount makes the gift free on every plan, but it never adds the gift to the cart. The four ways to close that gap, from no code to Shopify Functions, with the settings and the test cases."
+description: "Native Buy X Get Y works, but Shopify never adds the gift to the cart for you. When that is fine, when you need a Function or an app, and the checkout edge cases."
 date: 2026-10-23
 tags: [shopify, conversion, apps, shopify-plus]
 faq_schema: true
 draft: false
 ---
 
-Short answer: a gift with purchase is two jobs, and Shopify only does one of them for you. Making the gift free is a Buy X get Y automatic discount, built in the admin on any plan in ten minutes. Getting the gift into the cart is not: Shopify's discounts price what is in the cart, they never add to it, and neither does any Shopify Function. So the second job goes to the theme, to an app, or on Shopify Plus to a checkout UI extension, and the rule it uses has to match the discount exactly. Everything else in this post follows from that split.
+Short answer: use an automatic Buy X Get Y discount with the gift at 100% off. That works on every plan, needs no app and takes ten minutes. What Shopify does not do is put the gift in the cart: the discount makes the gift free once the shopper adds it, and that is all. Auto-adding needs cart logic in the theme or an app, and on Shopify Plus a Function keeps the rules tight so the gift is never free on an order that didn't qualify. Whatever you pick, test it in accelerated checkout too, because Shop Pay and the express buttons skip the cart.
 
-I'll go through what the admin gives you, why the gift doesn't add itself, the four ways to close that gap, and the test cases that catch the problems I see most often.
+The rest of this post is the setup, a comparison of the four ways to do it, what breaks in checkout, and the checklist I run before a campaign goes live.
 
-## What does Shopify give you out of the box?
+## Quickest way to give a free gift?
 
-The Buy X get Y discount, in Discounts, Create discount. Set the method to Automatic discount so nobody has to type a code. Under Customer buys, choose either a minimum quantity or a minimum purchase amount from the products or collections you pick. Under Customer gets, set the quantity, pick the gift product or a collection of gifts, and set the value to Free. Give it a start and end date and save.
+The native discount. It is the right answer more often than the app market would have you believe.
 
-Things worth knowing about it, straight from Shopify's own documentation:
+### Setting up Buy X Get Y
 
-- The free item is never added to the cart automatically. The buyer has to put both the qualifying items and the gift in the cart; then the discount applies on its own.
-- A store can have at most 25 active automatic discounts, and discounts created by apps count towards that number.
+In the admin, go to Discounts, Create discount, Buy X get Y, and set the method to Automatic discount so nobody has to type a code. Under Customer buys, choose a minimum quantity or a minimum purchase amount, from the products or collections that qualify. Under Customer gets, set the quantity to one, pick the gift product (or a collection of gifts if the shopper may choose), and set the value to Free. Add start and end dates and save.
+
+Points from Shopify's help centre that matter for a gift:
+
+- A store can have at most 25 active automatic discounts, and app discounts count towards that total.
 - If the gift's inventory reaches zero, it shows as sold out and the discount can't be used. Track inventory on the gift and watch it.
-- If the same product is in Customer buys and Customer gets, the lower-priced item is the one that gets discounted.
+- When the same product is in Customer buys and Customer gets, the lower-priced item is the one that is discounted. Keep the gift out of the qualifying set.
 - Automatic discounts don't apply on the post-purchase page.
-- The start and end times follow your store's time zone.
+- Start and end times follow the store's time zone.
 
-For a gift the buyer chooses themselves, that is the whole setup. Add a line to the product page and the cart saying "Add your free gift", link it to the gift product, and you are done. No app, no code, no risk.
+### Why the gift doesn't appear in the cart
 
-## Why doesn't the gift add itself?
+Because of what a discount is in Shopify's model. A discount reads the cart and changes prices; it never changes the cart's contents. Shopify's own documentation says it plainly: the free or discounted item is never automatically added to the cart, and the customer has to add both the qualifying items and the gift. The same is true of Shopify Functions. The Cart Transform Function can expand a line into a bundle, merge lines or update a line's price and presentation, and that is the full list; there is no operation that adds a line.
 
-Because of where discounts sit in Shopify's model. A discount, whether from the admin or from a Shopify Function, reads the cart and changes prices. It doesn't change the cart's contents. The Cart Transform Function can expand a line into a bundle, merge lines or update a line's price and presentation, and that is all; there is no operation to add a line.
+So "add the gift" is always a storefront or checkout job: theme code, an app's theme embed, or on Plus a checkout UI extension. The discount stays responsible for the price.
 
-So the "add the gift" job always runs in the storefront: theme code, an app's theme embed, or on Plus a checkout UI extension. Which one is right depends on the plan and on how much the gift matters to the campaign.
+## Which method should I use?
 
-## Route 1: the discount alone, no code
+| Method | Auto-adds the gift | Plus needed | Cost | Risk |
+|---|---|---|---|---|
+| Native Buy X Get Y, shopper adds the gift | No | No | None beyond the gift itself | Shoppers who qualify never add it, so the campaign under-delivers |
+| Native discount plus theme cart logic | Yes, in the online store cart | No | A few hours of theme work, then upkeep when the theme changes | The theme and the discount drift apart; express checkout from the product page skips it |
+| Gift with purchase app | Yes, with a popup or a progress bar | No | Monthly fee and one more app embed on every page | Another writer to the cart, another vendor in the path of a purchase |
+| Discount Function plus a checkout UI extension | Yes, inside checkout, including Shop Pay when enabled | Yes | Development time and the Plus plan | Apple Pay and Google Pay sessions don't allow cart changes, so those shoppers still get no gift |
 
-Right for: a gift that is one of several the buyer can pick, a small campaign, a store that would rather promote the gift than automate it.
+My rule of thumb: native alone for a gift the shopper picks or a small campaign; theme logic for one gift at one threshold on a store that already has a developer touching the theme; an app when the campaigns change weekly and need a popup; the Function route on Plus when the gift is a core part of the offer and the rules are too specific for the admin.
 
-Create the discount as above. Then make the gift easy to reach: a block on the product page and in the cart drawer with the gift's image and an Add button, visible only while the campaign runs. Both are theme settings in most themes, or a small section with a date range. Hide the gift from search and collections with the `seo.hidden` metafield and by leaving it out of your collections, but keep it published to the Online Store channel, otherwise nothing can add it.
+The one thing I push back on is adding a gift app to a store that already runs a discount or promotion app. Check whether the app you have does gifts first. [The hidden cost of app sprawl](/blog/hidden-cost-shopify-plus-app-sprawl/) is mostly a list of stores that didn't.
 
-What you give up: some buyers who qualify never add the gift, and the campaign's lift is smaller than the plan said.
+## How do I make the gift add itself?
 
-## Route 2: the theme adds the gift, small code
+### Theme Cart AJAX and its limits
 
-Right for: a single gift at a threshold, a team that wants it to just appear, no appetite for another app.
-
-The discount still does the pricing. The theme watches the cart and keeps the gift in sync with the same rule. In outline:
+The theme watches the cart and keeps the gift in step with the same rule the discount uses. The core is a few calls to the Cart AJAX API:
 
 ```js
-const GIFT_VARIANT_ID = 1234567890; // from theme settings
+const GIFT_VARIANT_ID = 1234567890; // from theme settings, never hard-coded
 const THRESHOLD = 7500;             // in cents, the same amount as the discount
 
 async function syncGift() {
@@ -72,131 +78,75 @@ function post(url, body) {
 }
 ```
 
-Call `syncGift()` after every cart change your theme makes, then refresh the cart drawer the way the theme does it. The underscore in `_gift` follows the convention most themes use to hide a line property from the buyer. Hard-code nothing: the variant, the threshold and the dates belong in theme settings or a metaobject, so marketing can change the campaign without a deploy. That is rule three in [no-nonsense Shopify development](/blog/no-nonsense-shopify-development/), and gift campaigns are where it matters most, because the campaign ends on a Sunday.
+Call `syncGift()` after every cart change the theme makes, then refresh the cart drawer the way the theme does it. The underscore in `_gift` follows the convention most themes use to hide a line property from the shopper. Put the variant, the threshold, the dates and the copy in theme settings or a metaobject, so marketing can end the campaign on a Sunday without a developer.
 
-Three things to get right:
+The limits are real:
 
-- The threshold and what it counts. The theme must count the same subtotal the discount counts, excluding the gift itself. Build a cart just under and just over the line and compare what the discount does with what the theme does before you trust either.
-- Express checkout buttons on the product page skip the cart. A buyer who taps Shop Pay or Apple Pay there never runs your theme code and gets no gift. Nothing breaks; the gift is simply missing for those orders. Decide whether that is acceptable for the campaign.
-- Quantity. The discount makes one gift free; a buyer who raises the quantity to three pays for two. Most themes let you hide the quantity control for a line with a property, which is the simplest guard.
+- It only runs where the theme runs. A shopper who taps Shop Pay, Apple Pay or Google Pay on the product page goes straight to checkout and never passes this code. Nothing breaks; the gift is simply missing from that order.
+- The theme must count the same subtotal the discount counts, excluding the gift. Build a cart just under and just over the line and compare what the discount does with what the theme does before trusting either.
+- The discount makes one gift free. A shopper who raises the quantity to three pays for two. Hide the quantity control on the gift line, which most themes support through a line property.
+- Every theme update is a chance for the logic to stop firing. Keep it in one snippet with one owner.
 
-## Route 3: an app
+### When an app is right
 
-Right for: a choice of gifts in a popup, several tiers, a progress bar, campaigns that change every week.
+When the campaign needs a popup with a choice of gifts, several thresholds with a progress bar, or a new rule every week, an app earns its place. It does the same AJAX work as above, with a settings page and a widget, and good ones handle the quantity guard and the removal case for you.
 
-Gift with purchase apps do route 2 for you, with a popup and a settings page. The cost is the usual one: a theme app embed in the path of every page view, another automatic discount in your 25, and another system that writes to the cart. If you already run a discount or promotion app, check whether it has a gift feature before adding a second one. [The hidden cost of app sprawl](/blog/hidden-cost-shopify-plus-app-sprawl/) is mostly a list of stores that didn't.
+Treat it like any other app in the critical path: one app, not two; check what it adds to every page load; and run the test list below against it. Apps get the subtotal rule and the express checkout gap wrong too.
 
-Whichever app you pick, the test list at the end of this post applies to it as much as to your own code. Apps get the subtotal rule and the quantity guard wrong too.
+On Shopify Plus there is a fourth option that closes most of the gaps: a discount Function that gives 100% off any line whose product carries a `free-gift` tag, paired with a checkout UI extension that adds and removes the gift inside checkout based on the cart total. Because it runs in checkout, it also covers the shopper who arrived through an express button on the product page, and it renders in Shop Pay once the merchant enables the extension for it. A validation Function on the same tag can block a checkout that has the gift without the qualifying items. Custom apps with Functions and blocks on the checkout steps both need Plus; [customizing checkout with extensibility](/blog/customize-shopify-checkout-extensibility/) explains where each piece sits. Shopify Scripts, the old way to do this on Plus, are gone.
 
-## Route 4: Shopify Plus, Functions and a checkout block
+## What breaks in checkout?
 
-Right for: Plus stores that used to do this with a Script, campaigns with rules the admin can't express, and stores where express checkout from the product page is a large share of orders.
+Four cases are behind most of the gift problems I see.
 
-Shopify Scripts are gone, and the replacement has two parts. A discount Function makes the gift free. It is deliberately simple: find lines whose product carries a `free-gift` tag and discount them in full. The input query asks for exactly that:
+**Shop Pay and express skip the cart.** The dynamic checkout buttons on the product page go straight to checkout. Theme logic never runs, so route 2 and most apps give those shoppers no gift. In checkout itself, a UI extension on Plus can add the gift during a standard checkout and during Shop Pay if the merchant has enabled it, but cart line changes return an error in Apple Pay and Google Pay sessions. Decide before launch whether a missing gift on those orders is acceptable, and say so in the campaign terms if it isn't.
 
-```graphql
-query RunInput {
-  cart {
-    lines {
-      id
-      merchandise {
-        __typename
-        ... on ProductVariant {
-          product {
-            isGift: hasAnyTag(tags: ["free-gift"])
-          }
-        }
-      }
-    }
-  }
-}
-```
+**Removing the qualifying item.** The shopper adds the gift, then removes the product that qualified them. The discount stops applying, which is correct, but now a full-price gift sits in the cart. Theme logic has to remove it on the next cart update; an app has to do the same; in checkout only a UI extension or a validation Function can react. Test this path explicitly, because the happy path hides it.
 
-And the function returns one operation:
+**Stacking and combinations.** Each discount has combination settings. If the Buy X Get Y discount and a code are not both set to combine with each other's discount class, the shopper sees one or the other and the support inbox fills up. Shopify also caps codes at five product or order codes and one shipping code per order. Test the exact pair you plan to run, including a free shipping code.
 
-```js
-export function run(input) {
-  const gifts = input.cart.lines.filter(
-    (line) => line.merchandise.__typename === 'ProductVariant' && line.merchandise.product.isGift,
-  );
-  if (gifts.length === 0) return {operations: []};
-  return {
-    operations: [
-      {
-        addCartLinesDiscount: {
-          candidates: [
-            {
-              targets: gifts.map((line) => ({cartLine: {id: line.id}})),
-              value: {percentage: {value: '100'}},
-              message: 'Free gift',
-            },
-          ],
-          selectionStrategy: 'FIRST',
-        },
-      },
-    ],
-  };
-}
-```
+**Gift stock running out.** With inventory tracked, the gift goes sold out, can't be added, and the discount has nothing to apply to. Shoppers who were promised it in a banner now see a product page that says sold out. Have the theme or app check availability before it shows the prompt, watch the gift's stock during the campaign, and keep a second gift ready.
 
-Deploy it with the Shopify CLI and create an automatic app discount that points at it. The threshold logic lives in the second part: a checkout UI extension on the checkout steps that adds the gift line when the cart qualifies and removes it when it stops qualifying. Because it runs inside checkout, it also catches the buyer who came in through an express checkout button on the product page, which route 2 can't. Put the threshold and the gift variant in the extension's settings or a shop metafield so marketing owns them. For how extensions and Functions fit together, see [customizing checkout with checkout extensibility](/blog/customize-shopify-checkout-extensibility/).
+## How do I test before launch?
 
-If gift-only orders are a worry, a validation Function can block checkout when a tagged gift is in the cart without the qualifying items. The same tag drives all three pieces, so there is one place to change.
+On a development store, or on the live store with Shopify Payments in test mode, the day before the campaign starts:
 
-Two limits: custom apps that contain Functions need Shopify Plus, and blocks on the checkout steps need Plus too. On other plans, routes 1 to 3 are the options.
-
-## What should be a setting rather than code?
-
-Whatever route you take, these should never be hard-coded:
-
-- The gift variant, or the collection of gifts.
-- The threshold, in each currency you sell in. Check the discount's behaviour per market with a test cart.
-- Start and end date and time.
-- Whether the gift is one per order or one per qualifying item.
-- The copy: the product page line, the cart drawer prompt, the message in checkout.
-
-On Plus, the Function can read a metafield on the discount itself, which is the standard place for its configuration. In a theme, settings or a metaobject do the same job. The point is that the campaign after this one shouldn't need a developer.
-
-## What should I test before the campaign goes live?
-
-Run these on a development store or with payments in test mode, and again on the live store with a test order the day before launch:
-
-1. A cart just under the threshold and just over it. The gift appears and disappears at the same amount in the cart, in checkout and on the order.
-2. Add the gift, then remove the qualifying item. The gift goes too, or at least stops being free.
+1. A cart just under and just over the threshold. The gift appears and disappears at the same amount in the cart, in checkout and on the order.
+2. Add the gift, then remove the qualifying item. The gift is removed, or at least no longer free.
 3. Raise the gift quantity. Only one is free.
-4. The gift at zero inventory. The campaign messaging stops, and nothing errors in the cart.
-5. A discount code on top of the gift. Check the combination settings on both discounts and the result in checkout.
-6. Express checkout from the product page, and from the cart.
-7. A guest and a signed-in customer, in each market.
-8. The order in the admin and in your reports: the gift line at full price with a discount allocation, inventory decremented, and the line visible to your warehouse integration with whatever property or tag it needs to pack it.
-9. Twenty-four hours after the end date, the gift is no longer free and the prompts are gone.
+4. Set the gift's inventory to zero. The prompts stop and nothing errors in the cart.
+5. A discount code on top, and a free shipping code on top of that. Check the result against the combination settings.
+6. Shop Pay from the cart, then Apple Pay or Google Pay from the product page.
+7. A guest and a signed-in customer, in each market and currency the store sells in; thresholds in a second currency are easy to get wrong.
+8. The order in the admin and in reports: the gift line at full price with a discount allocation, inventory decremented, and the line visible to the warehouse integration with whatever property or tag tells them to pack it.
+9. The morning after the end date: the gift is no longer free and every prompt is gone.
 
-Numbers 1 and 6 are the ones that get skipped, and the ones that show up later in the margin report.
+Numbers 1 and 6 are the ones that get skipped, and the ones that show up later in the margin report. If tracking on the Thank you page is part of how you measure the campaign, [check that it still runs](/blog/checkout-extensibility-migration-tracking/) before you count on the numbers.
 
 ## FAQ
 
-### Does the free gift count towards the spend threshold?
+### Does Shopify automatically add the free gift to the cart?
 
-Keep the gift out of the products and collections you put under Customer buys, so it can't help unlock itself. In your own theme code, subtract the gift's line price from the subtotal before comparing it with the threshold, as the example above does. Then build a cart that sits just under the threshold and confirm that adding the gift does not qualify it.
+No. Shopify's own documentation states that the free or discounted item is never automatically added; the shopper has to add the qualifying items and the gift, and then the discount applies. Auto-adding is theme logic, an app, or on Plus a checkout UI extension.
 
-### Can the buyer choose between several gifts?
+### Can I do a gift with purchase without an app?
 
-Yes. Under Customer gets, pick a collection of gift products instead of one product and set the quantity to one. The buyer adds whichever they want and that one becomes free. Automating the add in that case needs a popup, which is where an app or a custom block earns its place.
-
-### What happens when the gift runs out of stock?
-
-With inventory tracked, the gift shows as sold out, it can't be added, and the discount has nothing to apply to. Keep an eye on the gift's stock during the campaign, and have the theme or app check availability before it shows the prompt, so buyers aren't promised something they can't get.
-
-### Can I run the gift together with a discount code?
-
-Yes, if the combination settings allow it. Both the automatic discount and the code need to be set to combine with each other's discount class, and a buyer can use at most five product or order discount codes and one shipping code on an order. Test the exact pair you plan to run.
-
-### Can Shopify Flow add the gift to the cart?
-
-No. Flow acts on orders, customers, products and inventory after the fact, not on a live cart. It is useful around the campaign, for example to tag orders that contained the gift for reporting, or to alert you when the gift's stock drops below a level.
+Yes. The Buy X Get Y automatic discount handles the pricing on every plan. If the shopper adding the gift themselves is acceptable, you are done. If the gift must appear by itself, a small piece of theme code using the Cart AJAX API does it in the online store cart, with the limits described above.
 
 ### Do I need Shopify Plus for a gift with purchase?
 
-No. The discount, the theme route and the app route work on every plan. Plus is needed for custom Functions and for blocks on the checkout steps, which is what you want when express checkout from the product page is a large share of your orders or the rules are too specific for the admin.
+No. The native discount, the theme route and the app route all work on every plan. Plus is needed for a custom discount or validation Function and for a block on the checkout steps, which is what closes the express checkout gap and keeps the rules tight. If you are weighing Plus for reasons like this, [Shopify Plus architecture](/shopify-plus-architecture/) is where I'd start the conversation.
 
-If your last gift campaign cost more margin than it brought in orders, or the gift keeps showing up on orders that didn't qualify, the rule and the discount have drifted apart. I'm happy to look at where.
+### Does the gift work with Shop Pay and express checkout?
+
+Partly. The discount applies everywhere, so a gift that is already in the cart is free in every checkout. Adding the gift is the problem: express buttons on the product page skip the cart, so theme logic never runs. In checkout, a UI extension on Plus can add it in standard checkout and in Shop Pay when the merchant enables the extension for Shop Pay, but not in Apple Pay or Google Pay sessions.
+
+### Can I combine the gift with a discount code?
+
+Yes, if both discounts are set to combine with each other's class in their combination settings. A shopper can use at most five product or order discount codes plus one shipping code on an order. Test the exact combination you plan to run before launch.
+
+### What happens when the gift is out of stock?
+
+With inventory tracked, the gift shows as sold out, it can't be added, and the discount has nothing to apply to. Check availability before showing the prompt, watch the stock during the campaign, and have a replacement gift ready. The general questions about how I work are on the [FAQ page](/faq/).
+
+If your last gift campaign cost more margin than it brought in, or the gift keeps appearing on orders that didn't qualify, the rule and the discount have drifted apart. [I work directly with brands on this kind of fix](/shopify-plus-developer-amsterdam/), and more notes on Plus-specific setups are under [the Shopify Plus tag](/tag/shopify-plus/).
