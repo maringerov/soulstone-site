@@ -1,0 +1,28 @@
+# Soulstone
+
+> Soulstone is the Shopify and Shopify Plus practice of Marin Gerov, an independent developer and conversion specialist based in Amsterdam (Europe/Amsterdam timezone). He works with a small number of premium, design-led brands (watches, cars, crafts and other objects made with care), mostly through referrals. The work covers product pages, navigation and checkout flows, re-architecting overgrown Shopify Plus stores, checkout and customer account extensions, product data and integrations, and connecting marketing spend to on-site revenue.
+
+Contact: marin@soulstone.co. First step is a free 30-minute store teardown.
+Profiles: https://www.linkedin.com/in/maringerov, https://x.com/maringerov, https://www.linkedin.com/company/soulstone
+
+## Services
+- [Independent Shopify Plus developer in Amsterdam](https://soulstone.co/shopify-plus-developer-amsterdam/): who the work is for, services, process and FAQ.
+- [Shopify Plus architecture](https://soulstone.co/shopify-plus-architecture/): re-architecting complex Plus setups, app consolidation, performance.
+- [Results](https://soulstone.co/results/): anonymised case study of a premium Shopify Plus rebuild.
+- [FAQ](https://soulstone.co/faq/): fit, engagement model, teardown, how lift is measured.
+- [Win Chat](https://soulstone.co/win-chat/): getting Shopify brands found, cited and recommended in ChatGPT, Perplexity, Gemini, Claude and Google AI answers. Audit, Setup Sprint, Monitoring, or built into a new store. A separate practice from Soulstone that runs alongside the Shopify Plus development and architecture work.
+
+## Journal
+- [No-nonsense Shopify development: take complexity out before you add more](https://soulstone.co/blog/no-nonsense-shopify-development/): Most overblown Shopify stacks don't need another app or a rebuild. Find who writes what, use what Shopify already runs, and ship small. Four rules I work by, with two real cases.
+- [How do I migrate to checkout extensibility after checkout.liquid and Additional scripts?](https://soulstone.co/blog/checkout-extensibility-migration-tracking/): Tracking moves to Customer events, visible changes move to UI extensions, and theme code never runs in checkout. The 15-minute check and the fixes.
+- [The price keeps reverting. The theme is not the problem.](https://soulstone.co/blog/price-keeps-reverting-theme-not-the-problem/): A sale price came back overnight after a manual fix. How I traced the real writer in Shopify, and why I map every writer before touching code.
+- [owner_type in checkout extension metafields: add it now, before 2027-01 blocks your deploy](https://soulstone.co/blog/checkout-extension-metafields-owner-type/): From API 2026-10, checkout and customer account UI extensions can set owner_type on metafields. From 2027-01 it is required. The change and a repo check.
+- [On premium Shopify stores, mobile speed is a conversion lever, not an IT metric](https://soulstone.co/blog/mobile-speed-conversion-premium-shopify/): Why Core Web Vitals quietly cap revenue on premium Shopify Plus stores, what actually slows them down, and the order to fix it in.
+- [Most premium brands don't have a traffic problem. They have a conversion problem.](https://soulstone.co/blog/conversion-not-traffic-problem/): Why established premium brands keep buying more attention to fix a problem that lives on the store, and how to tell the difference before you spend another euro on ads.
+- [Replatforming is usually the wrong answer](https://soulstone.co/blog/replatforming-usually-wrong-answer/): When a premium Shopify Plus store feels broken, replatforming feels like the fix. It usually isn't. Here's how to decide between a rebuild and a re-architecture.
+- [The anatomy of a product page that closes premium buyers](https://soulstone.co/blog/premium-product-page-anatomy/): Premium customers decide fast. Here's what belongs above the fold on a high-end Shopify product page, and the order of information that turns intent into a sale.
+- [The hidden cost of Shopify Plus app sprawl](https://soulstone.co/blog/hidden-cost-shopify-plus-app-sprawl/): How a dozen well-intentioned apps quietly become the reason your store is slow, fragile, and expensive to change, and how to think about consolidating them without a risky replatform.
+- Feed: https://soulstone.co/rss.xml
+
+## Optional
+- [Sitemap](https://soulstone.co/sitemap-index.xml)
