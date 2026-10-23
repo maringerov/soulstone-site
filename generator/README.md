@@ -68,7 +68,7 @@ both places but not text drift between them.
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
 | `llms.txt` | `generator/templates/llms.txt` with the Journal list rendered from all posts |
 | `site.webmanifest` | `site_name`, `business.description` and `icons` in `site.json` plus `MANIFEST_ICONS` in `build.py` |
-| the shared head block on every page | `generator/site.json` (og:image, twitter card, RSS link, favicon and app icon links, manifest, theme-color, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
+| the shared head block on every page | `generator/site.json` (og:image, see Open Graph card below, twitter card, RSS link, favicon and app icon links, manifest, theme-color, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
 | the analytics block on every page | `analytics.ga4_measurement_id` in `site.json` plus the consent bar styles and script (`CONSENT_CSS`, `CONSENT_JS` in `build.py`) |
 | the author box on every post | `author` and `profiles` in `site.json` |
 
@@ -130,6 +130,36 @@ pip install -r generator/requirements-icons.txt
 python3 generator/icons.py            # writes the icon files to the repository root
 python3 generator/icons.py --previews /tmp/previews   # also favicon-512.png and favicon-sizes.png
 ```
+
+## Open Graph card
+
+`assets/og-default-v2.jpg` (1200 x 630) is the image behind `og:image` and
+`twitter:image` on every page, the RSS channel image and the `image` of the
+ProfessionalService and Article JSON-LD. It is a plain asset, written by
+`generator/og_image.py`: the dial texture from
+`assets/c6b425b1-moser-fume-dial-clean.png` scaled to cover the canvas and
+pulled down to near black under a gradient, with the copy set in the site's
+own web fonts from `_ploy_static/_astro` (Playfair Display for the name,
+Manrope for the strapline, JetBrains Mono for the eyebrow and the URL). The
+copy, colours and layout constants live at the top of the script.
+
+Link previews are cached by URL, so a card with new artwork needs a new file
+name. To change the card:
+
+```sh
+pip install -r generator/requirements-og.txt
+# 1. edit the copy or layout in generator/og_image.py
+# 2. bump "og_image" in generator/site.json (og-default-v3.jpg, ...)
+python3 generator/og_image.py            # writes the file named in site.json
+git rm assets/og-default-v2.jpg          # the previous card
+python3 generator/build.py               # repoints every page, rss.xml and the JSON-LD
+```
+
+The head pass also repoints the Article `image` baked into the five legacy
+posts whenever it names an earlier version of the default card
+(`DEFAULT_CARD_PREFIX` in `build.py`). The lint fails if any page or
+`rss.xml` references an `/assets/` file that does not exist. `og_image_alt`
+in `site.json` is the matching alt text.
 
 The five posts that predate the generator have no Markdown source. They are
 read for their metadata and kept as they are, apart from the author box and
