@@ -15,17 +15,19 @@ Sources
 Outputs (generator-owned, never hand edit)
   blog/<slug>/index.html for every Markdown post, each with one in-article
     Win Chat promo card at the section break nearest the middle of the body
-    and one teardown card (mailto button plus a line on what the 30 minutes
-    cover and who they are for) between the body and the author box (legacy
-    posts get both cards in place)
+    and one teardown card (a button to /teardown/ plus a line on what the 30
+    minutes cover and who they are for) between the body and the author box
+    (legacy posts get both cards in place)
   <path>/index.html for every Markdown page
   blog/index.html, tag/<tag>/index.html
+  the teardown request form (TEARDOWN_FORM) between the teardown-form markers
+    on any page that carries them: the homepage contact section and /teardown/
   sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
   the shared head block (og:image, twitter card, RSS link, favicon and app
   icon links, web app manifest, theme-color, mobile navigation styles and
   script, the Win Chat promo banner styles and script, the teardown card and
   mobile hero styles, ProfessionalService and Person JSON-LD) on every HTML
-  page
+  page, plus the teardown form styles and script on pages that carry the form
   the analytics block (GA4 with Consent Mode defaults and the cookie consent
   bar) right after the viewport meta on every HTML page
 
@@ -242,9 +244,12 @@ ARTICLE_PROMO = (
 )
 ARTICLE_PROMO_HEAD = f"<style>{ARTICLE_PROMO_CSS}</style>"
 
-# Teardown call to action. The same mailto button the header and the homepage
-# contact section use, with one line under it saying what the 30 minutes cover
-# and who they are for. The line is built from the FAQ and landing page copy.
+# Teardown call to action. The header, the footer and the post card all point
+# at the request form on /teardown/; the homepage contact section carries the
+# same form. Under every button sits one line saying what the 30 minutes cover
+# and who they are for, built from the FAQ and landing page copy. The email
+# address stays visible next to each form as the fallback.
+TEARDOWN_PATH = "/teardown/"
 TEARDOWN_EMAIL = "marin@soulstone.co"
 TEARDOWN_LABEL = "Book a 30-min teardown"
 TEARDOWN_NOTE = (
@@ -269,11 +274,117 @@ TEARDOWN_CTA = (
     '<aside class="not-prose ss-teardown-cta mt-14 border-t border-ploy-border-primary/50 pt-10" aria-label="Book a teardown">'
     '<p class="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-ploy-accent-primary">Next step</p>'
     '<p class="mt-4 font-heading text-2xl leading-tight tracking-tight text-ploy-text-primary sm:text-3xl">Start with a 30-minute store teardown.</p>'
-    f'<a href="mailto:{TEARDOWN_EMAIL}" class="ss-teardown-cta-button mt-8 {BUTTON_CLASS}">{TEARDOWN_LABEL}</a>'
+    f'<a href="{TEARDOWN_PATH}" class="ss-teardown-cta-button mt-8 {BUTTON_CLASS}">{TEARDOWN_LABEL}</a>'
     f'<p class="{TEARDOWN_NOTE_CLASS}">{TEARDOWN_NOTE}</p>'
     "</aside>"
     f"{TEARDOWN_CTA_END}"
 )
+
+# The teardown request form. One markup constant, written by the build between
+# the teardown-form markers wherever they appear: inside the homepage contact
+# section (index.html, where the HomePage bundle renders the same string, see
+# generator/README.md) and in pages/teardown.md. It posts
+# application/x-www-form-urlencoded to the Apps Script endpoint; without
+# JavaScript the browser submits it there directly. The script below validates
+# the fields, sends with fetch in no-cors mode (an opaque response counts as
+# sent), falls back to a hidden iframe when fetch is missing or fails, and
+# offers the mailto when both fail. The website field is a honeypot: visually
+# hidden, out of the tab order and ignored by assistive technology; a filled-in
+# value is dropped without sending. The field names are the endpoint's contract.
+TEARDOWN_ENDPOINT = (
+    "https://script.google.com/macros/s/"
+    "AKfycbw96mw34nt6z9XqD0hjVwtFm5M08GQiIgoIOLZm7XwLUZ9O4hJw1mFLnqxLe1RwL2tGxw/exec"
+)
+TEARDOWN_FORM_START = "<!-- teardown-form:start -->"
+TEARDOWN_FORM_END = "<!-- teardown-form:end -->"
+TEARDOWN_REVENUE_BANDS = ["Under 1M", "1 to 5M", "5 to 20M", "20M plus", "Prefer not to say"]
+TEARDOWN_FORM = (
+    f'<form class="ss-form not-prose" data-ss-teardown action="{TEARDOWN_ENDPOINT}" method="post" accept-charset="UTF-8" aria-label="Teardown request">'
+    '<div class="ss-form-grid">'
+    '<div class="ss-field"><label for="td-name">Name</label><input id="td-name" name="name" type="text" required autocomplete="name"></div>'
+    '<div class="ss-field"><label for="td-email">Email</label><input id="td-email" name="email" type="email" required autocomplete="email" inputmode="email"></div>'
+    '<div class="ss-field ss-field-wide"><label for="td-store">Store URL</label><input id="td-store" name="store_url" type="url" required autocomplete="url" inputmode="url" placeholder="https://yourstore.com"></div>'
+    '<div class="ss-field"><label for="td-revenue">Annual revenue</label><select id="td-revenue" name="revenue_band"><option value="">Choose a band</option>'
+    + "".join(f"<option>{b}</option>" for b in TEARDOWN_REVENUE_BANDS)
+    + "</select></div>"
+    '<div class="ss-field"><label for="td-country">Country</label><input id="td-country" name="country" type="text" autocomplete="country-name"></div>'
+    '<div class="ss-field ss-field-wide"><label for="td-problem">Main problem</label><textarea id="td-problem" name="main_problem" rows="4" placeholder="What the store is not doing that it should"></textarea></div>'
+    "</div>"
+    '<input type="hidden" name="source_page" value="">'
+    '<div class="ss-form-hp" aria-hidden="true"><label for="td-website">Website</label><input id="td-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>'
+    f'<button type="submit" class="ss-form-submit {BUTTON_CLASS} disabled:pointer-events-none disabled:opacity-50">{TEARDOWN_LABEL}</button>'
+    '<p class="ss-form-status" role="status" aria-live="polite"></p>'
+    f'<p class="ss-form-note">{TEARDOWN_NOTE}</p>'
+    '<p class="ss-form-privacy">Your details are used to reply to this request and for nothing else. <a href="/privacy/">Privacy</a>.</p>'
+    f'<p class="ss-form-alt">Prefer email? <a href="mailto:{TEARDOWN_EMAIL}">{TEARDOWN_EMAIL}</a></p>'
+    "</form>"
+)
+TEARDOWN_FORM_CSS = (
+    ".ss-form{text-align:left;color-scheme:dark}"
+    ".ss-form-grid{display:grid;gap:1.25rem}"
+    ".ss-field label{display:block;margin-bottom:.5rem;font-family:var(--font-mono);font-size:.7rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ploy-text-secondary)}"
+    ".ss-field input,.ss-field select,.ss-field textarea{display:block;width:100%;min-height:3rem;margin:0;padding:.75rem 1rem;scroll-margin-top:11rem;"
+    "border:1px solid var(--ploy-input-border,var(--ploy-border-primary));border-radius:var(--radius-input);"
+    "background:var(--ploy-input-background,transparent);color:var(--ploy-text-primary);font-family:var(--font-body);font-size:1rem;line-height:1.5;"
+    "transition:border-color .2s,box-shadow .2s}"
+    ".ss-field textarea{min-height:7rem;resize:vertical}"
+    ".ss-field select{appearance:none;-webkit-appearance:none;padding-right:2.75rem;background-repeat:no-repeat;background-position:right 1rem center;"
+    'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27 fill=%27none%27 stroke=%27%23a1a1aa%27 stroke-width=%271.5%27%3E%3Cpath d=%27M6 8l4 4 4-4%27/%3E%3C/svg%3E")}'
+    ".ss-field option{background:var(--ploy-background-primary);color:var(--ploy-text-primary)}"
+    ".ss-field ::placeholder{color:var(--ploy-text-secondary);opacity:.55}"
+    ".ss-field input:focus-visible,.ss-field select:focus-visible,.ss-field textarea:focus-visible{outline:none;border-color:var(--ploy-accent-primary);box-shadow:0 0 0 1px var(--ploy-accent-primary)}"
+    ".ss-field [aria-invalid=true]{border-color:#f87171}"
+    ".ss-field-error{margin:.5rem 0 0;font-size:.8rem;line-height:1.4;color:#f87171}"
+    ".ss-form-hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}"
+    ".ss-form-submit{margin-top:2rem;width:100%}"
+    ".ss-form-status{margin:1.25rem 0 0;font-size:.95rem;line-height:1.5;color:var(--ploy-text-primary)}"
+    ".ss-form-status:empty{display:none}"
+    ".ss-form-note,.ss-form-privacy,.ss-form-alt{margin:1rem 0 0;font-size:.875rem;line-height:1.6;color:var(--ploy-text-secondary)}"
+    ".ss-form-status a,.ss-form-privacy a,.ss-form-alt a{color:var(--ploy-accent-primary);text-decoration:underline;text-underline-offset:.25em;transition:opacity .2s}"
+    ".ss-form-status a:hover,.ss-form-privacy a:hover,.ss-form-alt a:hover{opacity:.8}"
+    ".ss-form-sent .ss-form-grid,.ss-form-sent .ss-form-submit,.ss-form-sent .ss-form-note,.ss-form-sent .ss-form-privacy{display:none}"
+    "@media (min-width:40rem){.ss-form-grid{grid-template-columns:1fr 1fr;gap:1.25rem 1.5rem}.ss-field-wide{grid-column:1/-1}.ss-form-submit{width:auto}}"
+)
+TEARDOWN_SENT_TEXT = "Thanks, I'll reply within one working day."
+TEARDOWN_FAILED_TEXT = "The request did not go through. Email me instead: "
+TEARDOWN_FORM_JS = (
+    "(function(){if(window.__ssTeardown)return;window.__ssTeardown=1;"
+    f'var d=document,S="form[data-ss-teardown]",MAIL="{TEARDOWN_EMAIL}",SENT="{TEARDOWN_SENT_TEXT}",FAILED="{TEARDOWN_FAILED_TEXT}";'
+    "function each(list,fn){for(var i=0;i<list.length;i++)fn(list[i])}"
+    'function field(f,n){return f.querySelector(\'[name="\'+n+\'"]\')}'
+    'function status(f){return f.querySelector(".ss-form-status")}'
+    'function button(f){return f.querySelector(".ss-form-submit")}'
+    'function label(f,el){var l=el.id&&f.querySelector(\'label[for="\'+el.id+\'"]\'),t=l?l.textContent:el.name;return t.charAt(0).toLowerCase()+t.slice(1)}'
+    'function errorNode(f,el,make){var id=el.id+"-error",p=d.getElementById(id);if(!p&&make){p=d.createElement("p");p.className="ss-field-error";p.id=id;el.parentNode.appendChild(p)}return p}'
+    'function setError(f,el,msg){var p=errorNode(f,el,!!msg);if(msg){p.textContent=msg;el.setAttribute("aria-invalid","true");el.setAttribute("aria-describedby",p.id)}else{if(p)p.remove();el.removeAttribute("aria-invalid");el.removeAttribute("aria-describedby")}}'
+    'function message(f,el){if(el.required&&!el.value.trim())return"Please fill in your "+label(f,el)+".";if(el.validity.valid)return"";'
+    'if(el.type==="email")return"Please enter a valid email address.";if(el.type==="url")return"Please enter the full store URL, like https://yourstore.com.";return"Please check this field."}'
+    'function validate(f){var first=null;each(f.querySelectorAll("input,select,textarea"),function(el){if(el.type==="hidden"||el.type==="submit"||el.name==="website")return;'
+    'if(el.type==="url"){var v=el.value.trim();if(v&&v.indexOf("://")<0&&v.indexOf(".")>0)el.value=v="https://"+v}'
+    "var m=message(f,el);setError(f,el,m);if(m&&!first)first=el});"
+    'if(first){status(f).textContent="Please check the highlighted fields.";first.focus()}else status(f).textContent="";return!first}'
+    'function busy(f,on){var b=button(f);if(!b)return;if(!b.getAttribute("data-label"))b.setAttribute("data-label",b.textContent);b.disabled=on;b.textContent=on?"Sending":b.getAttribute("data-label");f.setAttribute("data-busy",on?"1":"")}'
+    'function sent(f){busy(f,false);f.classList.add("ss-form-sent");var s=status(f);s.textContent=SENT;s.setAttribute("tabindex","-1");s.focus()}'
+    'function failed(f){busy(f,false);var s=status(f);s.textContent=FAILED;var a=d.createElement("a");a.href=mailto(f);a.textContent=MAIL;s.appendChild(a);s.appendChild(d.createTextNode("."))}'
+    'function val(f,n){var el=field(f,n);return el?el.value.trim():""}'
+    'function mailto(f){var lines=["Name: "+val(f,"name"),"Email: "+val(f,"email"),"Store: "+val(f,"store_url"),"Revenue: "+val(f,"revenue_band"),"Country: "+val(f,"country"),"","Main problem:",val(f,"main_problem")];'
+    'return"mailto:"+MAIL+"?subject="+encodeURIComponent("Teardown request")+"&body="+encodeURIComponent(lines.join("\\n"))}'
+    "function canFetch(){return!!(window.fetch&&window.Promise&&window.URLSearchParams&&window.FormData)}"
+    'function viaFetch(f){return fetch(f.action,{method:"POST",mode:"no-cors",credentials:"omit",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(new FormData(f)).toString()})}'
+    'function viaFrame(f){var name="ss-td-"+Date.now(),fr=d.createElement("iframe"),started=false;fr.name=name;fr.setAttribute("aria-hidden","true");fr.tabIndex=-1;'
+    'fr.style.cssText="position:absolute;width:1px;height:1px;left:-10000px;border:0";var timer=setTimeout(function(){failed(f)},12e3);'
+    "function go(){if(started)return;started=true;fr.onload=function(){clearTimeout(timer);sent(f)};fr.onerror=function(){clearTimeout(timer);failed(f)};f.target=name;try{f.submit()}catch(e){clearTimeout(timer);failed(f)}}"
+    "fr.onload=go;d.body.appendChild(fr);setTimeout(go,150)}"
+    'function send(f){if(f.getAttribute("data-busy")==="1"||!validate(f))return;var src=field(f,"source_page");if(src)src.value=location.pathname;'
+    'var hp=field(f,"website");if(hp&&hp.value){sent(f);return}busy(f,true);if(!canFetch()){viaFrame(f);return}'
+    "var p;try{p=viaFetch(f)}catch(e){p=Promise.reject(e)}p.then(function(){sent(f)},function(){viaFrame(f)})}"
+    "function init(){each(d.querySelectorAll(S),function(f){f.noValidate=true;var src=field(f,\"source_page\");if(src)src.value=location.pathname})}"
+    'd.addEventListener("submit",function(e){var f=e.target;if(!f||!f.matches||!f.matches(S))return;e.preventDefault();send(f)});'
+    'd.addEventListener("input",function(e){var el=e.target;if(el&&el.closest&&el.closest(S)&&el.getAttribute("aria-invalid"))setError(el.closest(S),el,"")});'
+    'if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",init);else init()'
+    "})();"
+)
+TEARDOWN_FORM_HEAD = f"<style>{TEARDOWN_FORM_CSS}</style><script>{TEARDOWN_FORM_JS}</script>"
 # Below 40rem (Tailwind sm) the post card button spans the column, and the
 # hero copy on the static pages (.ss-hero-copy) is reordered so the teardown
 # button and its note come straight after the heading and the intro paragraph
@@ -955,6 +1066,25 @@ def upsert_teardown_cta(h: str, where: str) -> str:
     return h[:i] + TEARDOWN_CTA + " " + h[i:]
 
 
+def has_teardown_form(h: str) -> bool:
+    return TEARDOWN_FORM_START in h
+
+
+def upsert_teardown_form(h: str, where: str) -> str:
+    """Write the current form between the teardown-form markers on a page that carries them."""
+    starts, ends = h.count(TEARDOWN_FORM_START), h.count(TEARDOWN_FORM_END)
+    if (starts, ends) == (0, 0):
+        return h
+    if (starts, ends) != (1, 1):
+        raise BuildError(f"{where}: expected one pair of teardown-form markers, found {starts} start(s) and {ends} end(s)")
+    pattern = re.escape(TEARDOWN_FORM_START) + ".*?" + re.escape(TEARDOWN_FORM_END)
+    block = TEARDOWN_FORM_START + TEARDOWN_FORM + TEARDOWN_FORM_END
+    out, n = re.subn(pattern, lambda _: block, h, 1, re.S)
+    if not n:
+        raise BuildError(f"{where}: teardown-form end marker comes before the start marker")
+    return out
+
+
 def page_jsonld(site: Site, name: str, description: str, url: str, extra: list[dict] | None = None) -> str:
     graph = [site.business_node(), site.person_node(), site.website_node(),
              {"@type": "WebPage", "name": name, "description": description, "url": url}]
@@ -1112,7 +1242,8 @@ def render_llms(site: Site, posts: list[dict]) -> str:
 
 
 # -------------------------------------------------------- shared head pass
-def head_block(site: Site) -> str:
+def head_block(site: Site, with_form: bool = False) -> str:
+    """The shared head block; with_form adds the teardown form styles and script."""
     img = site.abs_url(site.cfg["og_image"])
     feed = site.cfg["feed"]
     return (
@@ -1130,6 +1261,7 @@ def head_block(site: Site) -> str:
         f"{PROMO_HEAD}"
         f"{ARTICLE_PROMO_HEAD}"
         f"{TEARDOWN_HEAD}"
+        f"{TEARDOWN_FORM_HEAD if with_form else ''}"
         f"{HEAD_END}"
     )
 
@@ -1178,10 +1310,12 @@ def own_url(site: Site, where: str) -> str:
 def apply_head(site: Site, h: str, where: str) -> str:
     """Idempotently add the shared meta block and entity JSON-LD to a page.
 
-    Also pins the canonical and og:url to the page's own trailing-slash URL
-    and gives every internal link and JSON-LD URL its trailing slash.
+    Also pins the canonical and og:url to the page's own trailing-slash URL,
+    gives every internal link and JSON-LD URL its trailing slash, and refreshes
+    the teardown form on pages that carry its markers.
     """
     url = own_url(site, where)
+    h = upsert_teardown_form(h, where)
     h, n_canon = re.subn(r'(<link rel="canonical" href=")[^"]*(")', lambda m: m.group(1) + url + m.group(2), h, 1)
     if not n_canon:
         raise BuildError(f"{where}: no canonical link")
@@ -1203,7 +1337,7 @@ def apply_head(site: Site, h: str, where: str) -> str:
     m = re.search(r'<meta property="og:url" content="[^"]*"\s*/?>', h)
     if not m:
         raise BuildError(f"{where}: no og:url meta, cannot place head block")
-    h = h[: m.end()] + head_block(site) + h[m.end():]
+    h = h[: m.end()] + head_block(site, with_form=has_teardown_form(h)) + h[m.end():]
 
     path = site.path(url[len(site.origin):])
 

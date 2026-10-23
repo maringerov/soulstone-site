@@ -23,6 +23,13 @@ Fails on
     Graph card cannot leave a stale name behind
   * a blog post without exactly one in-article Win Chat promo card or exactly
     one teardown card, or either card on a page that is not a post
+  * a "Book a teardown" link in the header or footer of any page, or in the
+    header, footer and page bundles, that does not point at /teardown/
+  * the teardown request form: a page with the form markers but not exactly
+    one form, a form without the expected field names, the endpoint or the
+    honeypot attributes, a page with the form but without its script (or the
+    script without the form), and a homepage form that differs from the string
+    the HomePage bundle renders on hydration
   * leftover {{placeholders}} from the templates
   * the Google Search Console verification file changed, gained a trailing
     newline or ended up in the sitemap
@@ -67,6 +74,33 @@ JSONLD_URL_KEYS = {"url", "@id", "item", "mainEntityOfPage"}
 ARTICLE_PROMO_START = "<!-- win-chat-promo:start -->"
 TEARDOWN_CTA_START = "<!-- teardown-cta:start -->"
 TEARDOWN_CTA_ASIDE = '<aside class="not-prose ss-teardown-cta mt-14 border-t border-ploy-border-primary/50 pt-10" aria-label="Book a teardown">'
+TEARDOWN_PATH = "/teardown/"
+TEARDOWN_FORM_START = "<!-- teardown-form:start -->"
+TEARDOWN_FORM_END = "<!-- teardown-form:end -->"
+TEARDOWN_FORM_OPEN = '<form class="ss-form not-prose" data-ss-teardown action="https://script.google.com/macros/s/'
+TEARDOWN_FORM_FIELDS = ["name", "email", "store_url", "revenue_band", "country", "main_problem", "source_page", "website"]
+TEARDOWN_FORM_PARTS = [
+    ('name="name" type="text" required', "required name field"),
+    ('name="email" type="email" required', "required email field"),
+    ('name="store_url" type="url" required', "required store_url field"),
+    ('<input type="hidden" name="source_page"', "hidden source_page field"),
+    ('<div class="ss-form-hp" aria-hidden="true"><label for="td-website">Website</label><input id="td-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>', "honeypot"),
+    ('<p class="ss-form-status" role="status" aria-live="polite"></p>', "status line"),
+    ('<a href="mailto:marin@soulstone.co">marin@soulstone.co</a>', "email fallback"),
+    ('<a href="/privacy/">Privacy</a>', "privacy line"),
+]
+TEARDOWN_FORM_SCRIPT = "window.__ssTeardown"
+# The HomePage island renders the form from this constant, see generator/README.md.
+HOMEPAGE_BUNDLE = REPO / "_ploy_static" / "_astro" / "page.Br0xdvU1.js"
+HOMEPAGE_FORM_CONST = re.compile(r'const T=("(?:[^"\\]|\\.)*");')
+# The header button (desktop and mobile menu), its serialized astro-island prop
+# and the footer link. /win-chat/ has its own header button and is exempt from
+# the header check.
+HEADER_BUTTON = re.compile(r'<a href="([^"]*)" class="(?:items-center|ss-nav-cta )[^"]*">Book a teardown</a>')
+HEADER_PROP = re.compile(r"&quot;ctaLabel&quot;:\[0,&quot;Book a teardown&quot;\],&quot;ctaHref&quot;:\[0,&quot;([^&]*)&quot;\]")
+FOOTER_LINK = re.compile(r'<a href="([^"]*)" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Book a teardown</a>')
+BUNDLE_HEADER_CTA = re.compile(r'ctaLabel:(?:[a-z]=)?"Book a teardown",ctaHref:(?:[a-z]=)?"([^"]*)"')
+BUNDLE_FOOTER_LINK = re.compile(r'\{label:"Book a teardown",href:"([^"]*)"\}')
 
 
 def pages() -> list[Path]:
@@ -122,6 +156,53 @@ def asset_errors(text: str, rel: str) -> list[str]:
     names = sorted(set(re.findall(re.escape(ORIGIN) + r"/assets/([A-Za-z0-9._-]+)", text)))
     missing = [n for n in names if not (REPO / "assets" / n).is_file()]
     return [f"{rel}: /assets/{n} is referenced but does not exist" for n in missing]
+
+
+def teardown_link_errors(h: str, rel: str) -> list[str]:
+    """Header and footer "Book a teardown" links that do not go to the form page."""
+    errors = []
+    header = HEADER_BUTTON.findall(h)
+    if rel != "win-chat/index.html" and len(header) != 2:
+        errors.append(f"{rel}: expected the header Book a teardown button twice (desktop and mobile menu), found {len(header)}")
+    footer = FOOTER_LINK.findall(h)
+    if len(footer) != 1:
+        errors.append(f"{rel}: expected one footer Book a teardown link, found {len(footer)}")
+    bad = sorted({u for u in header + HEADER_PROP.findall(h) + footer if u != TEARDOWN_PATH})
+    if bad:
+        errors.append(f"{rel}: Book a teardown must point at {TEARDOWN_PATH}, found {bad}")
+    return errors
+
+
+def teardown_form_html(h: str) -> str | None:
+    """The form between the teardown-form markers, None when the page has no markers."""
+    m = re.search(re.escape(TEARDOWN_FORM_START) + "(.*?)" + re.escape(TEARDOWN_FORM_END), h, re.S)
+    return m.group(1) if m else None
+
+
+def teardown_form_errors(h: str, rel: str) -> list[str]:
+    """A page's teardown form, when it carries the markers, and the script that goes with it."""
+    errors = []
+    form = teardown_form_html(h)
+    has_script = TEARDOWN_FORM_SCRIPT in h
+    if form is None:
+        if has_script:
+            errors.append(f"{rel}: teardown form script on a page without the form")
+        if TEARDOWN_FORM_OPEN in h:
+            errors.append(f"{rel}: teardown form outside the teardown-form markers")
+        return errors
+    if not has_script:
+        errors.append(f"{rel}: teardown form without its script")
+    if h.count(TEARDOWN_FORM_START) != 1 or h.count(TEARDOWN_FORM_OPEN) != 1:
+        errors.append(f"{rel}: expected exactly one teardown form")
+    if not form.startswith(TEARDOWN_FORM_OPEN) or not form.endswith("</form>"):
+        errors.append(f"{rel}: teardown form does not post to the Apps Script endpoint")
+    names = re.findall(r'\sname="([^"]*)"', form)
+    if names != TEARDOWN_FORM_FIELDS:
+        errors.append(f"{rel}: teardown form fields {names} differ from {TEARDOWN_FORM_FIELDS}")
+    for part, label in TEARDOWN_FORM_PARTS:
+        if part not in form:
+            errors.append(f"{rel}: teardown form lacks the {label}")
+    return errors
 
 
 def jsonld_urls(node) -> list[str]:
@@ -258,10 +339,21 @@ def main() -> int:
             errors.append(f"{rel}: every post needs exactly one teardown card, found {cards} marker(s) and {card_asides} aside(s)")
         if not is_post and (cards or card_asides):
             errors.append(f"{rel}: teardown card belongs in posts only")
+        errors += teardown_link_errors(h, rel)
+        errors += teardown_form_errors(h, rel)
         if re.search(r"\{\{[a-z_]+\}\}", h):
             errors.append(f"{rel}: unfilled template placeholder")
         for m in re.finditer(r"PLACEHOLDER[^<\"]*", h):
             placeholders.setdefault(m.group(0).strip(), set()).add(rel)
+
+    homepage_form = teardown_form_html((REPO / "index.html").read_text(encoding="utf-8"))
+    bundle_form = HOMEPAGE_FORM_CONST.search(HOMEPAGE_BUNDLE.read_text(encoding="utf-8"))
+    if not homepage_form:
+        errors.append("index.html: the contact section must carry the teardown form")
+    if not bundle_form:
+        errors.append(f"{HOMEPAGE_BUNDLE.relative_to(REPO)}: no form constant (const T=\"...\") for the contact section")
+    elif homepage_form and json.loads(bundle_form.group(1)) != homepage_form:
+        errors.append(f"{HOMEPAGE_BUNDLE.relative_to(REPO)}: the form constant differs from the form in index.html; rebuild and copy it over (generator/README.md)")
 
     for tpl in templates():
         rel = str(tpl.relative_to(REPO))
@@ -274,9 +366,13 @@ def main() -> int:
 
     for js in bundles():
         rel = str(js.relative_to(REPO))
-        bad = sorted({u for u in re.findall(r'\bhref:"([^"]*)"', js.read_text(encoding="utf-8")) if missing_slash(u) or u.endswith(".html") or "index.html#" in u})
+        text = js.read_text(encoding="utf-8")
+        bad = sorted({u for u in re.findall(r'\bhref:"([^"]*)"', text) if missing_slash(u) or u.endswith(".html") or "index.html#" in u})
         if bad:
             errors.append(f"{rel}: href without trailing slash: {bad}")
+        bad = sorted({u for u in BUNDLE_HEADER_CTA.findall(text) + BUNDLE_FOOTER_LINK.findall(text) if u != TEARDOWN_PATH})
+        if bad:
+            errors.append(f"{rel}: Book a teardown must point at {TEARDOWN_PATH}, found {bad}")
 
     for xml in ["sitemap-0.xml", "sitemap-index.xml", "rss.xml"]:
         try:

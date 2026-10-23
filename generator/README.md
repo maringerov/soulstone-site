@@ -72,6 +72,7 @@ both places but not text drift between them.
 | `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html`, plus one in-article Win Chat promo card (`ARTICLE_PROMO` in `build.py`) placed by `promo_position()` and one teardown card (`TEARDOWN_CTA`) before the author box; legacy posts get both cards in place |
 | `<path>/index.html` (for example `privacy/index.html`) | `pages/*.md` and `generator/templates/page.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
+| the teardown request form between `<!-- teardown-form:start -->` / `:end -->` on `/` and `/teardown/` | `TEARDOWN_FORM` in `build.py`, see Teardown request form below |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
 | `llms.txt` | `generator/templates/llms.txt` with the Journal list rendered from all posts |
 | `site.webmanifest` | `site_name`, `business.description` and `icons` in `site.json` plus `MANIFEST_ICONS` in `build.py` |
@@ -84,8 +85,8 @@ both places but not text drift between them.
 `pages/<name>.md` renders to `<path>/index.html` through
 `generator/templates/page.html`. Front matter needs `title`, `description`,
 `path` (for example `/privacy`) and `lastmod` (used in the sitemap); `eyebrow`
-is optional. The body is Markdown and may contain inline HTML. The only page so
-far is `pages/privacy.md`.
+is optional. The body is Markdown and may contain inline HTML. The pages so far
+are `pages/privacy.md` and `pages/teardown.md`.
 
 ## Analytics and cookie consent
 
@@ -200,6 +201,13 @@ pages, templates, the `$o` default links in the SiteHeader bundle and the
 `links:` props in the three `page.*.js` bundles). The lint fails if a page
 lacks it in either menu.
 
+The `Book a teardown` button (desktop and mobile menu) goes to `/teardown/`.
+It lives in the same places: the static pages and templates (the two `<a>`
+tags and the `ctaHref` prop of the SiteHeader island), the `ctaHref` default
+in the SiteHeader bundle and the `ctaHref:` props in the three `page.*.js`
+bundles. `/win-chat/` has its own header button. The lint fails if any of
+them points anywhere else.
+
 ## In-article Win Chat promo
 
 Every post carries one promo card (`ARTICLE_PROMO` in `build.py`, wrapped in
@@ -217,20 +225,69 @@ card, or if the card turns up on a page that is not a post.
 
 Every post ends with one teardown card (`TEARDOWN_CTA` in `build.py`, wrapped
 in `<!-- teardown-cta:start -->` / `:end -->`) placed directly before the
-author box: an eyebrow, a heading, the same `mailto:marin@soulstone.co`
-button the header and the homepage contact section use, and one line
-(`TEARDOWN_NOTE`) on what the 30 minutes cover and who they are for, built
-from the FAQ and landing page copy. The card holds no `<div>`, because
-`article_body_span()` finds the end of the post body by the last `</div>`
-before the author box. The lint fails if a post has anything other than
-exactly one card, or if the card turns up on a page that is not a post.
+author box: an eyebrow, a heading, a button to `/teardown/` (the same target as
+the header and footer buttons) and one line (`TEARDOWN_NOTE`) on what the 30
+minutes cover and who they are for, built from the FAQ and landing page copy.
+The card holds no `<div>`, because `article_body_span()` finds the end of the
+post body by the last `</div>` before the author box. The lint fails if a post
+has anything other than exactly one card, or if the card turns up on a page
+that is not a post.
 
-The homepage shows the same note under both of its teardown buttons (hero and
-contact section). The Hero and ClosingCta components in
-`_ploy_static/_astro/closing-cta.B27vAxRK.js` take an optional `note` prop
-that the HomePage bundle (`page.Br0xdvU1.js`) passes; the other pages pass
-nothing and render no note. Change the note in `build.py`, in `index.html`
-(twice) and in `page.Br0xdvU1.js` (twice) together.
+The homepage hero shows the same note under its teardown button. The Hero
+component in `_ploy_static/_astro/closing-cta.B27vAxRK.js` takes an optional
+`note` prop that the HomePage bundle (`page.Br0xdvU1.js`) passes; the other
+pages pass nothing and render no note. Change the note in `build.py`, in
+`index.html` and in `page.Br0xdvU1.js` together. The homepage contact section
+carries the request form instead (next section), with the note under its
+button.
+
+## Teardown request form
+
+`TEARDOWN_FORM` in `build.py` is the one copy of the form markup. The build
+writes it between `<!-- teardown-form:start -->` / `:end -->` on any page that
+carries the markers: the contact section of `index.html` and the body of
+`pages/teardown.md` (so `/teardown/`). Pages with the form also get the form
+styles and script (`TEARDOWN_FORM_CSS`, `TEARDOWN_FORM_JS`) in their shared
+head block; other pages do not.
+
+The form posts `application/x-www-form-urlencoded` to the Apps Script endpoint
+(`TEARDOWN_ENDPOINT`) with the fields `name`, `email`, `store_url` (all
+required), `revenue_band`, `country`, `main_problem`, `source_page` (hidden,
+set to `location.pathname`) and `website` (a honeypot: visually hidden,
+`aria-hidden`, `tabindex="-1"`, `autocomplete="off"`; a filled-in value is
+treated as sent without posting). The field names are the endpoint's contract.
+The script validates on the client (inline messages, `aria-invalid`, focus on
+the first problem; a store URL without a scheme gets `https://`), disables the
+button while sending, sends with `fetch` in `no-cors` mode (an opaque response
+counts as sent), falls back to a hidden iframe when `fetch` is missing or
+rejects, and when that fails too shows a message with a `mailto:` link that
+carries the entered details. On success it shows "Thanks, I'll reply within
+one working day." Under the button sit the teardown note, a privacy line
+linking to `/privacy/` and the email address as the fallback. Without
+JavaScript the browser posts the form to the endpoint itself.
+
+The homepage is one React island (`HomePage` in `page.Br0xdvU1.js`), so the
+contact section has to render the same form on hydration. `ClosingCta` in
+`closing-cta.B27vAxRK.js` takes an optional `form` prop (an HTML string) and
+renders it through `dangerouslySetInnerHTML` inside
+`.ss-teardown-form-wrap` instead of the mailto button; React leaves the
+server-rendered form, its values and the status line alone on hydration and on
+later renders. The HomePage bundle passes `const T="..."`, a JSON-encoded copy
+of `TEARDOWN_FORM`. After changing the form in `build.py`, rebuild and refresh
+that constant:
+
+```sh
+python3 generator/build.py
+python3 -c 'import json,sys; sys.path.insert(0,"generator"); import build; print(json.dumps(build.TEARDOWN_FORM, ensure_ascii=False))'
+# paste the output as the value of const T= in _ploy_static/_astro/page.Br0xdvU1.js
+```
+
+The lint fails when the constant differs from the form in `index.html`, when a
+page with the markers has anything other than exactly one form with the
+expected fields, endpoint, honeypot, status line, privacy line and email
+fallback, when a page has the form without its script or the script without
+the form, and when any header or footer `Book a teardown` link (pages,
+templates and bundles) points anywhere but `/teardown/`.
 
 Below 40rem the hero copy (`.ss-hero-copy`) on the static pages is reordered
 by `TEARDOWN_CSS` in the shared head block so the teardown button comes
@@ -259,9 +316,9 @@ the page templates and in the React island
 `_ploy_static/_astro/site-footer.DULiVXzC.js`. Change the HTML and the bundle
 together (the `Privacy` link in the Studio column is an example) or hydration
 replaces the footer with the bundle's version. The `Book a teardown` link in
-the Studio column is a `mailto:`, not `#contact`: posts, the blog index and
-tag pages have no contact section. The lint fails if a page has no footer link
-to `/privacy`.
+the Studio column goes to `/teardown/`, like the header button and the post
+card. The lint fails if a page has no footer link to `/privacy` or if the
+footer teardown link points anywhere else.
 
 ## Trailing slashes
 
