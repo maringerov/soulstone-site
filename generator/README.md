@@ -62,7 +62,7 @@ both places but not text drift between them.
 
 | Output | Source |
 |---|---|
-| `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html`, plus one in-article Win Chat promo card (`ARTICLE_PROMO` in `build.py`) placed by `promo_position()`; legacy posts get the same card in place |
+| `blog/<slug>/index.html` | `posts/*.md` and `generator/templates/post.html`, plus one in-article Win Chat promo card (`ARTICLE_PROMO` in `build.py`) placed by `promo_position()` and one teardown card (`TEARDOWN_CTA`) before the author box; legacy posts get both cards in place |
 | `<path>/index.html` (for example `privacy/index.html`) | `pages/*.md` and `generator/templates/page.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
@@ -206,6 +206,33 @@ quotes and code are ignored. The card styles (`ARTICLE_PROMO_CSS`) ship in the
 shared head block. The lint fails if a post has anything other than exactly one
 card, or if the card turns up on a page that is not a post.
 
+## Teardown card and the teardown note
+
+Every post ends with one teardown card (`TEARDOWN_CTA` in `build.py`, wrapped
+in `<!-- teardown-cta:start -->` / `:end -->`) placed directly before the
+author box: an eyebrow, a heading, the same `mailto:marin@soulstone.co`
+button the header and the homepage contact section use, and one line
+(`TEARDOWN_NOTE`) on what the 30 minutes cover and who they are for, built
+from the FAQ and landing page copy. The card holds no `<div>`, because
+`article_body_span()` finds the end of the post body by the last `</div>`
+before the author box. The lint fails if a post has anything other than
+exactly one card, or if the card turns up on a page that is not a post.
+
+The homepage shows the same note under both of its teardown buttons (hero and
+contact section). The Hero and ClosingCta components in
+`_ploy_static/_astro/closing-cta.B27vAxRK.js` take an optional `note` prop
+that the HomePage bundle (`page.Br0xdvU1.js`) passes; the other pages pass
+nothing and render no note. Change the note in `build.py`, in `index.html`
+(twice) and in `page.Br0xdvU1.js` (twice) together.
+
+Below 40rem the hero copy (`.ss-hero-copy`) on the static pages is reordered
+by `TEARDOWN_CSS` in the shared head block so the teardown button comes
+straight after the heading and the intro paragraph (`.ss-hero-intro`) moves
+below it; on a 390px wide screen the button is on the first screen. The
+compiled Tailwind CSS has no responsive order utilities, so the two classes
+live in the Hero component and in the hero markup of `/`, `/faq`, `/results`
+and `/shopify-plus-architecture`.
+
 ## Promo banner
 
 The build writes the Win Chat promo banner styles and script (`PROMO_CSS`,
@@ -224,8 +251,10 @@ The footer markup is not generated either. It lives in every static page, in
 the page templates and in the React island
 `_ploy_static/_astro/site-footer.DULiVXzC.js`. Change the HTML and the bundle
 together (the `Privacy` link in the Studio column is an example) or hydration
-replaces the footer with the bundle's version. The lint fails if a page has no
-footer link to `/privacy`.
+replaces the footer with the bundle's version. The `Book a teardown` link in
+the Studio column is a `mailto:`, not `#contact`: posts, the blog index and
+tag pages have no contact section. The lint fails if a page has no footer link
+to `/privacy`.
 
 ## Trailing slashes
 
