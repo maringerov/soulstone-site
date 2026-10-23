@@ -21,8 +21,8 @@ Fails on
   * an absolute /assets/ URL (og:image, twitter:image, JSON-LD or RSS image)
     on any page or in rss.xml whose file does not exist, so a renamed Open
     Graph card cannot leave a stale name behind
-  * a blog post without exactly one in-article Win Chat promo card, or the
-    card on a page that is not a post
+  * a blog post without exactly one in-article Win Chat promo card or exactly
+    one teardown card, or either card on a page that is not a post
   * leftover {{placeholders}} from the templates
   * the Google Search Console verification file changed, gained a trailing
     newline or ended up in the sitemap
@@ -65,6 +65,8 @@ GOOGLE_VERIFICATION_BODY = b"google-site-verification: googlef0ef0874c5fa4c80.ht
 ORIGIN = json.loads((REPO / "generator" / "site.json").read_text(encoding="utf-8"))["origin"].rstrip("/")
 JSONLD_URL_KEYS = {"url", "@id", "item", "mainEntityOfPage"}
 ARTICLE_PROMO_START = "<!-- win-chat-promo:start -->"
+TEARDOWN_CTA_START = "<!-- teardown-cta:start -->"
+TEARDOWN_CTA_ASIDE = '<aside class="not-prose ss-teardown-cta mt-14 border-t border-ploy-border-primary/50 pt-10" aria-label="Book a teardown">'
 
 
 def pages() -> list[Path]:
@@ -250,6 +252,12 @@ def main() -> int:
             errors.append(f"{rel}: every post needs exactly one Win Chat promo card, found {promos} marker(s) and {asides} aside(s)")
         if not is_post and (promos or asides):
             errors.append(f"{rel}: Win Chat promo card belongs in posts only")
+        cards = h.count(TEARDOWN_CTA_START)
+        card_asides = h.count(TEARDOWN_CTA_ASIDE)
+        if is_post and (cards != 1 or card_asides != 1):
+            errors.append(f"{rel}: every post needs exactly one teardown card, found {cards} marker(s) and {card_asides} aside(s)")
+        if not is_post and (cards or card_asides):
+            errors.append(f"{rel}: teardown card belongs in posts only")
         if re.search(r"\{\{[a-z_]+\}\}", h):
             errors.append(f"{rel}: unfilled template placeholder")
         for m in re.finditer(r"PLACEHOLDER[^<\"]*", h):

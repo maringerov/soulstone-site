@@ -15,14 +15,17 @@ Sources
 Outputs (generator-owned, never hand edit)
   blog/<slug>/index.html for every Markdown post, each with one in-article
     Win Chat promo card at the section break nearest the middle of the body
-    (legacy posts get the same card in place)
+    and one teardown card (mailto button plus a line on what the 30 minutes
+    cover and who they are for) between the body and the author box (legacy
+    posts get both cards in place)
   <path>/index.html for every Markdown page
   blog/index.html, tag/<tag>/index.html
   sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
   the shared head block (og:image, twitter card, RSS link, favicon and app
   icon links, web app manifest, theme-color, mobile navigation styles and
-  script, the Win Chat promo banner styles and script, ProfessionalService and
-  Person JSON-LD) on every HTML page
+  script, the Win Chat promo banner styles and script, the teardown card and
+  mobile hero styles, ProfessionalService and Person JSON-LD) on every HTML
+  page
   the analytics block (GA4 with Consent Mode defaults and the cookie consent
   bar) right after the viewport meta on every HTML page
 
@@ -238,6 +241,49 @@ ARTICLE_PROMO = (
     f"{ARTICLE_PROMO_END}"
 )
 ARTICLE_PROMO_HEAD = f"<style>{ARTICLE_PROMO_CSS}</style>"
+
+# Teardown call to action. The same mailto button the header and the homepage
+# contact section use, with one line under it saying what the 30 minutes cover
+# and who they are for. The line is built from the FAQ and landing page copy.
+TEARDOWN_EMAIL = "marin@soulstone.co"
+TEARDOWN_LABEL = "Book a 30-min teardown"
+TEARDOWN_NOTE = (
+    "Free, 30 minutes on product pages, navigation, checkout and speed, "
+    "for premium Shopify brands where marketing works but the store caps growth."
+)
+TEARDOWN_NOTE_CLASS = "mt-4 max-w-xl text-sm leading-relaxed text-ploy-text-secondary"
+BUTTON_CLASS = (
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap font-button uppercase tracking-[0.12em] font-semibold "
+    "transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ploy-accent-primary/60 "
+    "bg-ploy-accent-primary text-ploy-button-primary-text hover:bg-ploy-accent-primary-400 h-14 px-8 text-[0.8rem]"
+)
+# One card at the end of every post, between the body and the author box. The
+# markers let a rebuild replace it in place; it carries not-prose so the
+# typography plugin leaves it alone, and it holds no <div> because
+# article_body_span() finds the end of the body by the last </div> before the
+# author box.
+TEARDOWN_CTA_START = "<!-- teardown-cta:start -->"
+TEARDOWN_CTA_END = "<!-- teardown-cta:end -->"
+TEARDOWN_CTA = (
+    f"{TEARDOWN_CTA_START}"
+    '<aside class="not-prose ss-teardown-cta mt-14 border-t border-ploy-border-primary/50 pt-10" aria-label="Book a teardown">'
+    '<p class="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-ploy-accent-primary">Next step</p>'
+    '<p class="mt-4 font-heading text-2xl leading-tight tracking-tight text-ploy-text-primary sm:text-3xl">Start with a 30-minute store teardown.</p>'
+    f'<a href="mailto:{TEARDOWN_EMAIL}" class="ss-teardown-cta-button mt-8 {BUTTON_CLASS}">{TEARDOWN_LABEL}</a>'
+    f'<p class="{TEARDOWN_NOTE_CLASS}">{TEARDOWN_NOTE}</p>'
+    "</aside>"
+    f"{TEARDOWN_CTA_END}"
+)
+# Below 40rem (Tailwind sm) the post card button spans the column, and the
+# hero copy on the static pages (.ss-hero-copy) is reordered so the teardown
+# button and its note come straight after the heading and the intro paragraph
+# (.ss-hero-intro) moves below them. The compiled Tailwind CSS has no
+# responsive order utilities, so this lives here.
+TEARDOWN_CSS = (
+    "@media (max-width:39.9375rem){.ss-teardown-cta .ss-teardown-cta-button{width:100%}"
+    ".ss-hero-copy{display:flex;flex-direction:column}.ss-hero-copy .ss-hero-intro{order:1}}"
+)
+TEARDOWN_HEAD = f"<style>{TEARDOWN_CSS}</style>"
 # Favicon and app icons. The SVG carries a solid rounded-square background so
 # the mark reads on light and dark browser tabs; the ICO is the fallback for
 # browsers without SVG favicon support and Safari uses the apple-touch-icon.
@@ -848,6 +894,15 @@ def upsert_article_promo(h: str, where: str) -> str:
     return h[:at] + ARTICLE_PROMO + "\n" + h[at:]
 
 
+def upsert_teardown_cta(h: str, where: str) -> str:
+    """Put exactly one teardown card in a post, directly before the author box."""
+    h = re.sub(re.escape(TEARDOWN_CTA_START) + ".*?" + re.escape(TEARDOWN_CTA_END) + r"\s?", "", h, flags=re.S)
+    i = h.find(AUTHOR_BOX_START)
+    if i < 0:
+        raise BuildError(f"{where}: author box not found, cannot place the teardown card")
+    return h[:i] + TEARDOWN_CTA + " " + h[i:]
+
+
 def page_jsonld(site: Site, name: str, description: str, url: str, extra: list[dict] | None = None) -> str:
     graph = [site.business_node(), site.person_node(), site.website_node(),
              {"@type": "WebPage", "name": name, "description": description, "url": url}]
@@ -1022,6 +1077,7 @@ def head_block(site: Site) -> str:
         f"{NAV_HEAD}"
         f"{PROMO_HEAD}"
         f"{ARTICLE_PROMO_HEAD}"
+        f"{TEARDOWN_HEAD}"
         f"{HEAD_END}"
     )
 
@@ -1150,17 +1206,17 @@ def build(root: Path, include_drafts: bool) -> dict:
 
     for p in md_posts:
         rel = f"blog/{p['slug']}/index.html"
-        page = upsert_article_promo(render_post(site, p), rel)
+        page = upsert_teardown_cta(upsert_article_promo(render_post(site, p), rel), rel)
         check_dashes(page, rel)
         write(rel, page)
         print(f"post   {rel}  <- {p['source']}")
     for p in legacy:
         rel = p["source"]
         page = upsert_author_box(site, (root / rel).read_text(encoding="utf-8"), rel)
-        page = upsert_article_promo(page, rel)
+        page = upsert_teardown_cta(upsert_article_promo(page, rel), rel)
         check_dashes(page, rel)
         write(rel, page)
-        print(f"legacy {rel}  (author box and Win Chat promo refreshed, content kept)")
+        print(f"legacy {rel}  (author box, Win Chat promo and teardown card refreshed, content kept)")
     for p in md_pages:
         rel = f"{p['path'].lstrip('/')}/index.html"
         page = render_page(site, p)
