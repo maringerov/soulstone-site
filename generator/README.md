@@ -31,6 +31,13 @@ both places but not text drift between them.
    `slug` and `updated` are optional. `draft: true` hides the post unless the
    build runs with `--include-drafts`.
 
+   `faq_schema: true` adds a `FAQPage` node to the post's JSON-LD, next to the
+   `Article` and `BreadcrumbList`. The questions come from the last H2 whose
+   text contains "FAQ" or "Questions": every H3 under it is a question and the
+   text up to the next H3 (or the next H2) is the answer, flattened to plain
+   text. The build fails if the flag is set and that section or its H3s are
+   missing. Without the flag the FAQ section is plain copy, as before.
+
    `date` is the day the post goes live, never later. A post dated after the
    build date (today in Europe/Amsterdam) is skipped with a warning: no page,
    and nothing in the blog index, tag pages, sitemap, RSS or `llms.txt`. Every

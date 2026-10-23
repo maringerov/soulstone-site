@@ -3,6 +3,7 @@ title: "How do I migrate to checkout extensibility after checkout.liquid and Add
 slug: checkout-extensibility-migration-tracking
 description: "Tracking moves to Customer events, visible changes move to UI extensions, and theme code never runs in checkout. The 15-minute check and the fixes."
 date: 2026-10-19
+updated: 2026-10-23
 tags: [shopify, checkout-extensibility, tracking, customer-events, shopify-qa]
 draft: false
 ---
@@ -73,7 +74,7 @@ For ad platforms, also turn on the server-side option if the app has one (enhanc
 
 Anything the buyer saw, such as a delivery note, a survey, an upsell or a loyalty message, becomes a block. Install an app that offers it as a checkout or customer account block, or build a small UI extension in a custom app. Then place it in the checkout editor.
 
-Non-Plus stores can customize the Thank you and Order status pages this way. Blocks on the information, shipping and payment steps are Plus only.
+Non-Plus stores can customize the Thank you and Order status pages this way. Blocks on the information, shipping and payment steps are Plus only. For the full map of which tool takes which change, including Functions and branding, see [how to customize Shopify checkout with extensibility](/blog/customize-shopify-checkout-extensibility/).
 
 ## FAQ
 

@@ -3,7 +3,7 @@
 
 Sources
   posts/*.md            Markdown posts with front matter (title, description,
-                        date, tags, optional slug, updated, draft).
+                        date, tags, optional slug, updated, draft, faq_schema).
   pages/*.md            Markdown static pages (title, description, path,
                         lastmod, optional eyebrow), e.g. /privacy.
   blog/<slug>/index.html  Legacy posts that have no Markdown source. They are
@@ -654,6 +654,45 @@ def parse_front_matter(text: str, where: str) -> tuple[dict, str]:
     return meta, m.group(2)
 
 
+FAQ_H2 = re.compile(r"<h2[^>]*>(?P<text>[^<]*(?:FAQ|Questions)[^<]*)</h2>", re.I)
+H3 = re.compile(r"<h3[^>]*>(.*?)</h3>", re.S)
+
+
+def plain_text(fragment: str) -> str:
+    """Rendered HTML to one line of plain text, for JSON-LD answer text."""
+    text = re.sub(r"<[^>]+>", " ", fragment)
+    return re.sub(r"\s+", " ", html.unescape(text)).strip()
+
+
+def faq_pairs(body_html: str, where: str) -> list[tuple[str, str]]:
+    """Question and answer pairs from the post's FAQ section.
+
+    The section is the last top-level H2 whose text contains "FAQ" or
+    "Questions", up to the next H2 or the end of the body. Every H3 in it is a
+    question; the HTML between it and the next H3 is the answer, flattened to
+    plain text. Used for the FAQPage JSON-LD when a post sets faq_schema: true.
+    """
+    starts = list(FAQ_H2.finditer(body_html))
+    if not starts:
+        raise BuildError(f"{where}: faq_schema is set but there is no FAQ or Questions H2")
+    section = body_html[starts[-1].end():]
+    nxt = re.search(r"<h2[\s>]", section)
+    if nxt:
+        section = section[: nxt.start()]
+    heads = list(H3.finditer(section))
+    pairs = []
+    for i, m in enumerate(heads):
+        end = heads[i + 1].start() if i + 1 < len(heads) else len(section)
+        q = plain_text(m.group(1))
+        a = plain_text(section[m.end():end])
+        if not q or not a:
+            raise BuildError(f"{where}: FAQ question {q!r} has no answer text")
+        pairs.append((q, a))
+    if not pairs:
+        raise BuildError(f"{where}: faq_schema is set but the FAQ section has no H3 questions")
+    return pairs
+
+
 def load_markdown_posts(site: Site, posts_dir: Path, include_drafts: bool) -> list[dict]:
     posts = []
     for f in sorted(posts_dir.glob("*.md")):
@@ -679,6 +718,7 @@ def load_markdown_posts(site: Site, posts_dir: Path, include_drafts: bool) -> li
         if slug != slugify(slug):
             raise BuildError(f"{where}: slug {slug!r} is not url safe")
         body_html = markdown.markdown(body, extensions=MD_EXTENSIONS, output_format="html5")
+        faq = faq_pairs(body_html, where) if str(meta.get("faq_schema", "false")).lower() == "true" else []
         posts.append(
             dict(
                 slug=slug,
@@ -688,6 +728,7 @@ def load_markdown_posts(site: Site, posts_dir: Path, include_drafts: bool) -> li
                 updated=meta.get("updated") or meta["date"],
                 tags=[slugify(t) for t in meta.get("tags", [])],
                 body_html=body_html,
+                faq=faq,
                 source=where,
             )
         )
@@ -794,6 +835,17 @@ def post_jsonld(site: Site, p: dict) -> str:
             ],
         },
     ]
+    if p.get("faq"):
+        graph.append(
+            {
+                "@type": "FAQPage",
+                "@id": url + "#faq",
+                "mainEntity": [
+                    {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
+                    for q, a in p["faq"]
+                ],
+            }
+        )
     return ld_dump({"@context": "https://schema.org", "@graph": graph})
 
 
