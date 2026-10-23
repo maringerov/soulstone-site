@@ -89,6 +89,9 @@ DASHES = {"\u2014": "em dash", "\u2013": "en dash"}
 BANNED_WORDS = {
     re.compile(r"free-?lanc", re.I): "say independent, or describe the work, instead",
 }
+# Every version of the default Open Graph card lives under this path; see
+# is_default_card() and generator/og_image.py.
+DEFAULT_CARD_PREFIX = "/assets/og-default"
 AUTHOR_BOX_START = "<!-- author-box:start -->"
 AUTHOR_BOX_END = "<!-- author-box:end -->"
 HEAD_START = "<!-- soulstone-head:start -->"
@@ -427,6 +430,16 @@ def normalize_hrefs(h: str, origin: str) -> str:
         return f"{m.group(1)}{page_path(m.group(2))}{m.group(3)}"
 
     return re.sub(r"(&quot;href&quot;:\[0,&quot;)(/[^&]*)(&quot;\])", prop, h)
+
+
+def is_default_card(url: str, site: "Site") -> bool:
+    """True for the site's default Open Graph card, any version.
+
+    The card is renamed (og-default-v2.jpg, ...) whenever its artwork changes
+    so link previews drop their cached copy. Legacy posts carry the name that
+    was current when they were written, so the head pass repoints them.
+    """
+    return isinstance(url, str) and url.startswith(site.origin + DEFAULT_CARD_PREFIX)
 
 
 def normalize_jsonld_urls(node, origin: str):
@@ -1105,7 +1118,8 @@ def apply_head(site: Site, h: str, where: str) -> str:
         if t == "Article":
             n["author"] = {"@id": site.person_id()}
             n["publisher"] = {"@id": site.business_id()}
-            n.setdefault("image", site.abs_url(site.cfg["og_image"]))
+            if not n.get("image") or is_default_card(n["image"], site):
+                n["image"] = site.abs_url(site.cfg["og_image"])
         if t == "Service":
             n["provider"] = {"@id": site.business_id()}
         keep.append(n)

@@ -18,6 +18,9 @@ Fails on
     script or the footer link to /privacy
   * a leftover Ploy starter favicon link (type="image/x-icon")
   * icon files referenced from the head or site.webmanifest that do not exist
+  * an absolute /assets/ URL (og:image, twitter:image, JSON-LD or RSS image)
+    on any page or in rss.xml whose file does not exist, so a renamed Open
+    Graph card cannot leave a stale name behind
   * a blog post without exactly one in-article Win Chat promo card, or the
     card on a page that is not a post
   * leftover {{placeholders}} from the templates
@@ -106,6 +109,17 @@ def href_errors(h: str, rel: str) -> list[str]:
     hrefs = re.findall(r'\bhref="([^"]*)"', h) + re.findall(r"&quot;href&quot;:\[0,&quot;([^&]*)&quot;\]", h)
     bad = sorted({u for u in hrefs if missing_slash(u)})
     return [f"{rel}: href without trailing slash: {bad}"] if bad else []
+
+
+def asset_errors(text: str, rel: str) -> list[str]:
+    """Absolute /assets/ URLs (og:image, twitter:image, JSON-LD and RSS images) whose file is missing.
+
+    The Open Graph card is renamed when its artwork changes, so a stale name
+    in a legacy post or a bundle would ship a broken preview image.
+    """
+    names = sorted(set(re.findall(re.escape(ORIGIN) + r"/assets/([A-Za-z0-9._-]+)", text)))
+    missing = [n for n in names if not (REPO / "assets" / n).is_file()]
+    return [f"{rel}: /assets/{n} is referenced but does not exist" for n in missing]
 
 
 def jsonld_urls(node) -> list[str]:
@@ -226,6 +240,7 @@ def main() -> int:
             future = sorted({d for d in published_dates(data) if d > TODAY})
             if future:
                 errors.append(f"{rel}: datePublished {future} is after today ({TODAY})")
+        errors += asset_errors(h, rel)
         if 'type="image/x-icon"' in h:
             errors.append(f"{rel}: old Ploy favicon link still present")
         is_post = page.parent.parent == REPO / "blog"
@@ -280,6 +295,7 @@ def main() -> int:
     for u in re.findall(r"<(?:link|guid[^>]*)>([^<]+)</(?:link|guid)>", rss):
         if missing_slash(u):
             errors.append(f"rss.xml: {u} lacks the trailing slash")
+    errors += asset_errors(rss, "rss.xml")
 
     llms = (REPO / "llms.txt").read_text(encoding="utf-8")
     for u in re.findall(r"https?://[^\s)\]>]+", llms):
