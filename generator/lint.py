@@ -30,6 +30,9 @@ Fails on
     honeypot attributes, a page with the form but without its script (or the
     script without the form), and a homepage form that differs from the string
     the HomePage bundle renders on hydration
+  * a homepage Latest writing list that is missing, does not link three
+    posts, or differs from const W in the HomePage bundle
+  * two posts sharing a title or a meta description
   * leftover {{placeholders}} from the templates
   * the Google Search Console verification file changed, gained a trailing
     newline or ended up in the sitemap
@@ -93,6 +96,10 @@ TEARDOWN_FORM_SCRIPT = "window.__ssTeardown"
 # The HomePage island renders the form from this constant, see generator/README.md.
 HOMEPAGE_BUNDLE = REPO / "_ploy_static" / "_astro" / "page.Br0xdvU1.js"
 HOMEPAGE_FORM_CONST = re.compile(r'const T=("(?:[^"\\]|\\.)*");')
+LATEST_WRITING_START = "<!-- latest-writing:start -->"
+LATEST_WRITING_END = "<!-- latest-writing:end -->"
+HOMEPAGE_LATEST_CONST = re.compile(r'const W=("(?:[^"\\]|\\.)*");')
+LATEST_WRITING_COUNT = 3
 # The header button (desktop and mobile menu), its serialized astro-island prop
 # and the footer link. /win-chat/ has its own header button and is exempt from
 # the header check.
@@ -176,6 +183,12 @@ def teardown_link_errors(h: str, rel: str) -> list[str]:
 def teardown_form_html(h: str) -> str | None:
     """The form between the teardown-form markers, None when the page has no markers."""
     m = re.search(re.escape(TEARDOWN_FORM_START) + "(.*?)" + re.escape(TEARDOWN_FORM_END), h, re.S)
+    return m.group(1) if m else None
+
+
+def latest_writing_html(h: str) -> str | None:
+    """The Latest writing list between its markers, None when the page has no markers."""
+    m = re.search(re.escape(LATEST_WRITING_START) + "(.*?)" + re.escape(LATEST_WRITING_END), h, re.S)
     return m.group(1) if m else None
 
 
@@ -265,6 +278,8 @@ def main() -> int:
         dashes(text, where)
         banned_words(text, where)
 
+    post_titles: dict[str, str] = {}
+    post_descs: dict[str, str] = {}
     for page in pages():
         rel = str(page.relative_to(REPO))
         h = page.read_text(encoding="utf-8")
@@ -327,6 +342,19 @@ def main() -> int:
         if 'type="image/x-icon"' in h:
             errors.append(f"{rel}: old Ploy favicon link still present")
         is_post = page.parent.parent == REPO / "blog"
+        if is_post:
+            if title:
+                t = title.group(1)
+                if t in post_titles:
+                    errors.append(f"{rel}: duplicate title {t!r} (also {post_titles[t]})")
+                else:
+                    post_titles[t] = rel
+            if desc:
+                d = desc.group(1)
+                if d in post_descs:
+                    errors.append(f"{rel}: duplicate meta description (also {post_descs[d]})")
+                else:
+                    post_descs[d] = rel
         promos = h.count(ARTICLE_PROMO_START)
         asides = h.count('<aside class="not-prose ss-article-promo" aria-label="Win Chat">')
         if is_post and (promos != 1 or asides != 1):
@@ -346,14 +374,30 @@ def main() -> int:
         for m in re.finditer(r"PLACEHOLDER[^<\"]*", h):
             placeholders.setdefault(m.group(0).strip(), set()).add(rel)
 
-    homepage_form = teardown_form_html((REPO / "index.html").read_text(encoding="utf-8"))
-    bundle_form = HOMEPAGE_FORM_CONST.search(HOMEPAGE_BUNDLE.read_text(encoding="utf-8"))
+    homepage = (REPO / "index.html").read_text(encoding="utf-8")
+    bundle_text = HOMEPAGE_BUNDLE.read_text(encoding="utf-8")
+    homepage_form = teardown_form_html(homepage)
+    bundle_form = HOMEPAGE_FORM_CONST.search(bundle_text)
     if not homepage_form:
         errors.append("index.html: the contact section must carry the teardown form")
     if not bundle_form:
         errors.append(f"{HOMEPAGE_BUNDLE.relative_to(REPO)}: no form constant (const T=\"...\") for the contact section")
     elif homepage_form and json.loads(bundle_form.group(1)) != homepage_form:
         errors.append(f"{HOMEPAGE_BUNDLE.relative_to(REPO)}: the form constant differs from the form in index.html; rebuild and copy it over (generator/README.md)")
+    homepage_latest = latest_writing_html(homepage)
+    bundle_latest = HOMEPAGE_LATEST_CONST.search(bundle_text)
+    if not homepage_latest:
+        errors.append("index.html: the homepage must carry the Latest writing list")
+    else:
+        links = re.findall(r'href="(/blog/[^"/]+/)"', homepage_latest)
+        if len(links) != LATEST_WRITING_COUNT:
+            errors.append(f"index.html: Latest writing must link {LATEST_WRITING_COUNT} posts, found {len(links)}: {links}")
+        if 'aria-label="Latest writing"' not in homepage_latest:
+            errors.append("index.html: Latest writing list missing its label")
+    if not bundle_latest:
+        errors.append(f"{HOMEPAGE_BUNDLE.relative_to(REPO)}: no latest-writing constant (const W=\"...\")")
+    elif homepage_latest and json.loads(bundle_latest.group(1)) != homepage_latest:
+        errors.append(f"{HOMEPAGE_BUNDLE.relative_to(REPO)}: the latest-writing constant differs from the list in index.html")
 
     for tpl in templates():
         rel = str(tpl.relative_to(REPO))

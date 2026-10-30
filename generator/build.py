@@ -22,6 +22,8 @@ Outputs (generator-owned, never hand edit)
   blog/index.html, tag/<tag>/index.html
   the teardown request form (TEARDOWN_FORM) between the teardown-form markers
     on any page that carries them: the homepage contact section and /teardown/
+  the homepage Latest writing list (three newest posts) between the
+    latest-writing markers, and the matching const W in the HomePage bundle
   sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
   the shared head block (og:image, twitter card, RSS link, favicon and app
   icon links, web app manifest, theme-color, mobile navigation styles and
@@ -54,6 +56,8 @@ Rules enforced
     or llms.txt. Every sitemap lastmod and the RSS lastBuildDate are capped at
     the build date. generator/lint.py fails on any built page whose
     datePublished, or any sitemap lastmod, is later than the lint date.
+  * Every post needs its own title and its own meta description. A duplicate
+    of either fails the build.
   * Page URLs end in a slash. GitHub Pages serves <dir>/index.html at <dir>/
     and 301-redirects the slashless form, so every page's canonical and og:url
     are set to its own trailing-slash URL, and internal hrefs, astro-island
@@ -297,6 +301,14 @@ TEARDOWN_ENDPOINT = (
 )
 TEARDOWN_FORM_START = "<!-- teardown-form:start -->"
 TEARDOWN_FORM_END = "<!-- teardown-form:end -->"
+# Homepage Latest writing list. The markup is written between these markers on
+# index.html; the HomePage island renders the same string from const W so
+# hydration does not wipe it. The build updates both.
+LATEST_WRITING_START = "<!-- latest-writing:start -->"
+LATEST_WRITING_END = "<!-- latest-writing:end -->"
+LATEST_WRITING_COUNT = 3
+HOMEPAGE_BUNDLE = "_ploy_static/_astro/page.Br0xdvU1.js"
+HOMEPAGE_LATEST_CONST = re.compile(r'const W=("(?:[^"\\]|\\.)*");')
 TEARDOWN_REVENUE_BANDS = ["Under 1M", "1 to 5M", "5 to 20M", "20M plus", "Prefer not to say"]
 TEARDOWN_FORM = (
     f'<form class="ss-form not-prose" data-ss-teardown action="{TEARDOWN_ENDPOINT}" method="post" accept-charset="UTF-8" aria-label="Teardown request">'
@@ -1070,6 +1082,67 @@ def has_teardown_form(h: str) -> bool:
     return TEARDOWN_FORM_START in h
 
 
+def check_unique_post_meta(posts: list[dict]) -> None:
+    """Each post must have its own title and its own meta description."""
+    for key in ("title", "description"):
+        seen: dict[str, str] = {}
+        for p in posts:
+            v = p[key]
+            if v in seen:
+                raise BuildError(f"duplicate post {key} {v!r} on {seen[v]} and {p['source']}")
+            seen[v] = p["source"]
+
+
+def render_latest_writing(posts: list[dict]) -> str:
+    """Small homepage list of the newest posts."""
+    latest = posts[:LATEST_WRITING_COUNT]
+    if len(latest) < LATEST_WRITING_COUNT:
+        raise BuildError(
+            f"homepage Latest writing needs {LATEST_WRITING_COUNT} posts, found {len(latest)}"
+        )
+    items = []
+    for p in latest:
+        items.append(
+            '<li class="border-t border-ploy-border-primary/50">'
+            f'<a href="/blog/{esc(p["slug"])}/" class="group flex flex-col gap-2 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8">'
+            f'<span class="font-heading text-xl leading-snug text-ploy-text-primary transition-colors group-hover:text-ploy-accent-primary">{esc(p["title"])}</span>'
+            f'<time datetime="{iso_z(p["date"])}" class="shrink-0 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-ploy-text-secondary/70">{esc(nice_date(p["date"]))}</time>'
+            "</a></li>"
+        )
+    return (
+        '<section class="bg-ploy-background-primary/92 py-24 backdrop-blur-md lg:py-32" aria-label="Latest writing">'
+        '<div class="mx-auto max-w-7xl px-6 lg:px-10">'
+        '<p class="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-ploy-accent-primary">Latest writing</p>'
+        f'<ul class="mt-8 max-w-2xl">{"".join(items)}</ul>'
+        '<p class="mt-8"><a href="/blog/" class="font-mono text-xs uppercase tracking-[0.16em] text-ploy-text-primary/80 underline-offset-8 transition-colors hover:text-ploy-accent-primary hover:underline">All writing</a></p>'
+        "</div></section>"
+    )
+
+
+def upsert_latest_writing(h: str, html: str, where: str) -> str:
+    """Write the Latest writing list between the markers on the homepage."""
+    starts, ends = h.count(LATEST_WRITING_START), h.count(LATEST_WRITING_END)
+    if (starts, ends) != (1, 1):
+        raise BuildError(
+            f"{where}: expected one pair of latest-writing markers, found {starts} start(s) and {ends} end(s)"
+        )
+    pattern = re.escape(LATEST_WRITING_START) + ".*?" + re.escape(LATEST_WRITING_END)
+    block = LATEST_WRITING_START + html + LATEST_WRITING_END
+    out, n = re.subn(pattern, lambda _: block, h, 1, re.S)
+    if not n:
+        raise BuildError(f"{where}: latest-writing end marker comes before the start marker")
+    return out
+
+
+def upsert_latest_writing_bundle(text: str, html: str, where: str) -> str:
+    """Keep const W in the HomePage bundle in lockstep with the homepage list."""
+    encoded = json.dumps(html, ensure_ascii=False)
+    out, n = HOMEPAGE_LATEST_CONST.subn(lambda _: f"const W={encoded};", text, 1)
+    if not n:
+        raise BuildError(f"{where}: no latest-writing constant (const W=\"...\")")
+    return out
+
+
 def upsert_teardown_form(h: str, where: str) -> str:
     """Write the current form between the teardown-form markers on a page that carries them."""
     starts, ends = h.count(TEARDOWN_FORM_START), h.count(TEARDOWN_FORM_END)
@@ -1381,6 +1454,7 @@ def build(root: Path, include_drafts: bool) -> dict:
     md_pages = load_markdown_pages(site, root / "pages")
     legacy = drop_future_posts(parse_legacy_posts(site, {p["slug"] for p in all_md_posts}), today)
     posts = sorted(md_posts + legacy, key=lambda p: (p["date"], p["slug"]), reverse=True)
+    check_unique_post_meta(posts)
     written: list[Path] = []
 
     def write(rel: str, text: str) -> None:
@@ -1411,6 +1485,11 @@ def build(root: Path, include_drafts: bool) -> dict:
         print(f"page   {rel}  <- {p['source']}")
 
     write("blog/index.html", render_blog_index(site, posts))
+
+    latest_html = render_latest_writing(posts)
+    check_copy(latest_html, "index.html Latest writing")
+    write("index.html", upsert_latest_writing((root / "index.html").read_text(encoding="utf-8"), latest_html, "index.html"))
+    write(HOMEPAGE_BUNDLE, upsert_latest_writing_bundle((root / HOMEPAGE_BUNDLE).read_text(encoding="utf-8"), latest_html, HOMEPAGE_BUNDLE))
 
     tags: dict[str, list[dict]] = {}
     for p in posts:

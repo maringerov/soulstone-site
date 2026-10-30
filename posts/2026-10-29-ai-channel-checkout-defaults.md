@@ -1,13 +1,14 @@
 ---
-title: "Shopify turned on checkout inside AI assistants by default: decide per channel before Black Friday"
+title: "What Shopify's AI channel checkout defaults are and how to change them"
 slug: ai-channel-checkout-defaults
-description: "Shopify's agentic storefronts are on by default, with direct checkout in Google, Meta and Copilot. What the default changes and how to choose per channel."
+description: "By default Shopify shares products with AI channels and runs direct checkout in Google, Meta and Copilot. Open Sales channels > Agentic, turn off Allow Shopify to manage for me, then set each channel."
 date: 2026-10-29
+updated: 2026-10-30
 tags: [shopify, agentic-commerce, checkout, ai-channels, premium-brands]
 draft: false
 ---
 
-Short answer: open Sales channels > Agentic in your Shopify admin this week. By default your products are shared with AI channels, direct checkout runs inside Google AI Mode and Gemini, Microsoft Copilot and Meta where they support it, and "Allow Shopify to manage for me" enrols your store in every new AI channel that comes along. That default may be fine for you. It should still be a choice you made, not one you found in December.
+What Shopify's AI channel checkout defaults are and how to change them: open Sales channels > Agentic in your Shopify admin. By default your products are shared with AI channels, direct checkout runs inside Google AI Mode and Gemini, Microsoft Copilot and Meta where they support it, and "Allow Shopify to manage for me" enrols your store in every new AI channel that comes along. Turn that setting off first. Until you do, the per-channel switches are not there to change. That default may be fine for you. It should still be a choice you made, not one you found in December.
 
 ## What is on by default?
 

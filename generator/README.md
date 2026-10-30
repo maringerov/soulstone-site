@@ -29,7 +29,9 @@ both places but not text drift between them.
    ```
 
    `slug` and `updated` are optional. `draft: true` hides the post unless the
-   build runs with `--include-drafts`.
+   build runs with `--include-drafts`. Each post needs its own title and its
+   own `description` (the meta description, card text and RSS blurb). A
+   duplicate of either fails the build.
 
    `faq_schema: true` adds a `FAQPage` node to the post's JSON-LD, next to the
    `Article` and `BreadcrumbList`. The questions come from the last H2 whose
@@ -73,6 +75,7 @@ both places but not text drift between them.
 | `<path>/index.html` (for example `privacy/index.html`) | `pages/*.md` and `generator/templates/page.html` |
 | `blog/index.html`, `tag/<tag>/index.html` | all posts (Markdown and legacy HTML) |
 | the teardown request form between `<!-- teardown-form:start -->` / `:end -->` on `/` and `/teardown/` | `TEARDOWN_FORM` in `build.py`, see Teardown request form below |
+| the homepage Latest writing list between `<!-- latest-writing:start -->` / `:end -->` on `/`, and `const W` in the HomePage bundle | the three newest posts, see Latest writing below |
 | `sitemap-0.xml`, `sitemap-index.xml`, `rss.xml` | all posts plus `static_pages` in `site.json` and every `pages/*.md` |
 | `llms.txt` | `generator/templates/llms.txt` with the Journal list rendered from all posts |
 | `site.webmanifest` | `site_name`, `business.description` and `icons` in `site.json` plus `MANIFEST_ICONS` in `build.py` |
@@ -297,6 +300,17 @@ compiled Tailwind CSS has no responsive order utilities, so the two classes
 live in the Hero component and in the hero markup of `/`, `/faq`, `/results`
 and `/shopify-plus-architecture`.
 
+## Latest writing
+
+The homepage carries a small list of the three newest posts, labelled
+Latest writing, between `<!-- latest-writing:start -->` / `:end -->`
+inside `.ss-latest-writing-wrap`, after the approach section and before
+the contact form. The HomePage island renders the same markup from
+`const W` in `_ploy_static/_astro/page.Br0xdvU1.js` through
+`dangerouslySetInnerHTML`, so hydration does not wipe it. The build writes
+both the HTML and the constant. The lint fails if the list is missing, if
+it does not link three posts, or if the constant differs from `index.html`.
+
 ## Promo banner
 
 The build writes the Win Chat promo banner styles and script (`PROMO_CSS`,
@@ -333,14 +347,15 @@ rewrites internal `href`s, the serialized header links in the astro-island
 props and the `url`, `@id`, `item` and `mainEntityOfPage` fields in the
 JSON-LD, so Markdown posts and static pages do not need to get it right by
 hand. Files with an extension (`/rss.xml`, `/favicon.svg`) keep their name.
-The Astro bundles under `_ploy_static/_astro/` are not rewritten; their
-`href:` values are edited by hand and the lint checks them.
+The Astro bundles under `_ploy_static/_astro/` are not rewritten, except
+`const W` in the HomePage bundle (the Latest writing list). Their `href:`
+values are edited by hand and the lint checks them.
 
 ## Checks
 
 ```sh
 python3 generator/build.py --check   # committed output matches a fresh build
-python3 generator/lint.py            # dashes and banned words in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS, llms.txt, GA4 tag, consent script, privacy link, trailing slashes
+python3 generator/lint.py            # dashes and banned words in all shipped HTML/JS/text, titles, meta, JSON-LD, sitemap, RSS, llms.txt, GA4 tag, consent script, privacy link, trailing slashes, Latest writing list
 ```
 
 The lint fails if any canonical, `og:url`, hreflang, JSON-LD URL, sitemap
