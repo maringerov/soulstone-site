@@ -1,13 +1,14 @@
 ---
-title: "Meta will open its own product page from your ads on 28 October: decide before the default flips"
+title: "How to opt out of Meta product browsing before the 28 Oct 2026 default"
 slug: meta-product-browsing-opt-out
-description: "From 28 Oct 2026 Meta adds product browsing to existing ads, so a tap can open a Meta page before your store. What it changes and how to decide on purpose."
+description: "On 28 October 2026 Meta turns product browsing on for existing ads unless you opt out. Use the notice button, then check each ad in Ads Manager so a tap still opens your store."
 date: 2026-10-26
+updated: 2026-10-30
 tags: [meta-ads, conversion, attribution, premium-brands, shopify]
 draft: false
 ---
 
-Short answer: on 28 October 2026 Meta switches on product browsing for ads that are already running, unless you opt out. With it on, a tap on your ad can open a product experience inside Facebook or Instagram before anyone reaches your store. If you invested in your product pages and your landing pages, decide this on purpose this week. Don't let the default decide it for you.
+How to opt out of Meta product browsing before the 28 Oct 2026 default: use the button in the notice, then check each running ad in Ads Manager. On 28 October 2026 Meta switches on product browsing for ads that are already running, unless you opt out. With it on, a tap on your ad can open a product experience inside Facebook or Instagram before anyone reaches your store. If you invested in your product pages and your landing pages, decide this on purpose this week.
 
 ## What is changing on 28 October?
 
