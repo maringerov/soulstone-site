@@ -15,7 +15,7 @@ Fails on
     mobile menu (toggle button, #site-menu panel and the toggle script), the
     Win Chat link in the desktop nav and the mobile menu, the promo banner
     script, the GA4 tag with its denied consent default, the cookie consent
-    script or the footer link to /privacy
+    script, the first-touch attribution script or the footer link to /privacy
   * a leftover Ploy starter favicon link (type="image/x-icon")
   * icon files referenced from the head or site.webmanifest that do not exist
   * an absolute /assets/ URL (og:image, twitter:image, JSON-LD or RSS image)
@@ -81,12 +81,13 @@ TEARDOWN_PATH = "/teardown/"
 TEARDOWN_FORM_START = "<!-- teardown-form:start -->"
 TEARDOWN_FORM_END = "<!-- teardown-form:end -->"
 TEARDOWN_FORM_OPEN = '<form class="ss-form not-prose" data-ss-teardown action="https://script.google.com/macros/s/'
-TEARDOWN_FORM_FIELDS = ["name", "email", "store_url", "revenue_band", "country", "main_problem", "source_page", "website"]
+TEARDOWN_FORM_FIELDS = ["name", "email", "store_url", "revenue_band", "country", "main_problem", "source_page", "notes", "website"]
 TEARDOWN_FORM_PARTS = [
     ('name="name" type="text" required', "required name field"),
     ('name="email" type="email" required', "required email field"),
     ('name="store_url" type="url" required', "required store_url field"),
     ('<input type="hidden" name="source_page"', "hidden source_page field"),
+    ('<input type="hidden" name="notes" value="ref=direct">', "hidden notes field"),
     ('<div class="ss-form-hp" aria-hidden="true"><label for="td-website">Website</label><input id="td-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>', "honeypot"),
     ('<p class="ss-form-status" role="status" aria-live="polite"></p>', "status line"),
     ('<a href="mailto:marin@soulstone.co">marin@soulstone.co</a>', "email fallback"),
@@ -205,6 +206,8 @@ def teardown_form_errors(h: str, rel: str) -> list[str]:
         return errors
     if not has_script:
         errors.append(f"{rel}: teardown form without its script")
+    elif "__ssAttrNotes" not in h:
+        errors.append(f"{rel}: teardown form script does not read first-touch attribution")
     if h.count(TEARDOWN_FORM_START) != 1 or h.count(TEARDOWN_FORM_OPEN) != 1:
         errors.append(f"{rel}: expected exactly one teardown form")
     if not form.startswith(TEARDOWN_FORM_OPEN) or not form.endswith("</form>"):
@@ -308,6 +311,7 @@ def main() -> int:
                             ('<script async src="https://www.googletagmanager.com/gtag/js?id=G-', "GA4 tag"),
                             ("gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'})", "GA4 consent default"),
                             ("window.__ssConsent", "cookie consent script"),
+                            ("window.__ssAttr", "first-touch attribution script"),
                             ('<a href="/privacy/" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Privacy</a>', "footer privacy link")]:
             if attr not in h:
                 errors.append(f"{rel}: missing {label}")
