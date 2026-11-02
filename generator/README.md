@@ -80,7 +80,7 @@ both places but not text drift between them.
 | `llms.txt` | `generator/templates/llms.txt` with the Journal list rendered from all posts |
 | `site.webmanifest` | `site_name`, `business.description` and `icons` in `site.json` plus `MANIFEST_ICONS` in `build.py` |
 | the shared head block on every page | `generator/site.json` (og:image, see Open Graph card below, twitter card, RSS link, favicon and app icon links, manifest, theme-color, ProfessionalService and Person JSON-LD) plus the mobile menu styles and script (`NAV_CSS`, `NAV_NOSCRIPT_CSS`, `NAV_JS` in `build.py`) |
-| the analytics block on every page | `analytics.ga4_measurement_id` in `site.json` plus the consent bar styles and script (`CONSENT_CSS`, `CONSENT_JS` in `build.py`) |
+| the analytics block on every page | `analytics.ga4_measurement_id` in `site.json` plus the consent bar styles and script (`CONSENT_CSS`, `CONSENT_JS` in `build.py`) and the first-touch attribution script (`ATTR_JS`) |
 | the author box on every post | `author` and `profiles` in `site.json` |
 
 ## Static pages in Markdown
@@ -110,6 +110,17 @@ pressed. Any element with `data-ss-consent-reset` (the "Change cookie choice"
 link on `/privacy`) clears the stored value, sets analytics storage back to
 denied and shows the bar again. With JavaScript off there is no bar and the tag
 never loads.
+
+## First-touch attribution
+
+The same analytics block includes `ATTR_JS` on every page, including blog posts.
+It does not read the cookie choice and it does not set a cookie. On load, if
+the URL has `utm_source`, `utm_medium` or `utm_campaign` (and, when present,
+`utm_content`), or `document.referrer` is another host, it stores
+`{utm_source, utm_medium, utm_campaign, utm_content, referrer_host, landing, ts}`
+in `localStorage` under `ss_attr`. The first record wins for 30 days; a later
+visit does not overwrite it. Storage access sits in `try/catch`. The teardown
+form reads it back as a `notes` value. With JavaScript off, nothing is stored.
 
 ## Favicon and app icons
 
@@ -256,7 +267,9 @@ head block; other pages do not.
 The form posts `application/x-www-form-urlencoded` to the Apps Script endpoint
 (`TEARDOWN_ENDPOINT`) with the fields `name`, `email`, `store_url` (all
 required), `revenue_band`, `country`, `main_problem`, `source_page` (hidden,
-set to `location.pathname`) and `website` (a honeypot: visually hidden,
+set to `location.pathname`, capped at 300 characters), `notes` (hidden, a
+compact first-touch string capped at 1000 characters, or `ref=direct` when
+there is no attribution) and `website` (a honeypot: visually hidden,
 `aria-hidden`, `tabindex="-1"`, `autocomplete="off"`; a filled-in value is
 treated as sent without posting). The field names are the endpoint's contract.
 The script validates on the client (inline messages, `aria-invalid`, focus on
@@ -276,14 +289,10 @@ renders it through `dangerouslySetInnerHTML` inside
 `.ss-teardown-form-wrap` instead of the mailto button; React leaves the
 server-rendered form, its values and the status line alone on hydration and on
 later renders. The HomePage bundle passes `const T="..."`, a JSON-encoded copy
-of `TEARDOWN_FORM`. After changing the form in `build.py`, rebuild and refresh
-that constant:
-
-```sh
-python3 generator/build.py
-python3 -c 'import json,sys; sys.path.insert(0,"generator"); import build; print(json.dumps(build.TEARDOWN_FORM, ensure_ascii=False))'
-# paste the output as the value of const T= in _ploy_static/_astro/page.Br0xdvU1.js
-```
+of `TEARDOWN_FORM`. The build writes that constant, the same way it writes
+`const W` for Latest writing. On submit the form script sets `source_page` to
+the current path and `notes` from `window.__ssAttrNotes()` before `fetch`
+builds the body from `FormData`. The iframe fallback submits those same fields.
 
 The lint fails when the constant differs from the form in `index.html`, when a
 page with the markers has anything other than exactly one form with the

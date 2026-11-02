@@ -21,7 +21,8 @@ Outputs (generator-owned, never hand edit)
   <path>/index.html for every Markdown page
   blog/index.html, tag/<tag>/index.html
   the teardown request form (TEARDOWN_FORM) between the teardown-form markers
-    on any page that carries them: the homepage contact section and /teardown/
+    on any page that carries them: the homepage contact section and /teardown/.
+    The hidden notes field carries first-touch attribution (or ref=direct)
   the homepage Latest writing list (three newest posts) between the
     latest-writing markers, and the matching const W in the HomePage bundle
   sitemap-0.xml, sitemap-index.xml, rss.xml, site.webmanifest, llms.txt
@@ -31,7 +32,8 @@ Outputs (generator-owned, never hand edit)
   mobile hero styles, ProfessionalService and Person JSON-LD) on every HTML
   page, plus the teardown form styles and script on pages that carry the form
   the analytics block (GA4 with Consent Mode defaults and the cookie consent
-  bar) right after the viewport meta on every HTML page
+  bar, plus the first-touch attribution script) right after the viewport meta
+  on every HTML page
 
 The icon files themselves (favicon.svg, favicon.ico, apple-touch-icon.png,
 icon-192.png, icon-512.png and the maskable variants) are committed assets at
@@ -295,6 +297,10 @@ TEARDOWN_CTA = (
 # offers the mailto when both fail. The website field is a honeypot: visually
 # hidden, out of the tab order and ignored by assistive technology; a filled-in
 # value is dropped without sending. The field names are the endpoint's contract.
+# notes is hidden and filled by the script from first-touch attribution
+# (window.__ssAttrNotes); the default ref=direct covers a submit with no
+# JavaScript. The endpoint ignores any other field and caps notes at 1000
+# characters and source_page at 300.
 TEARDOWN_ENDPOINT = (
     "https://script.google.com/macros/s/"
     "AKfycbw96mw34nt6z9XqD0hjVwtFm5M08GQiIgoIOLZm7XwLUZ9O4hJw1mFLnqxLe1RwL2tGxw/exec"
@@ -309,6 +315,7 @@ LATEST_WRITING_END = "<!-- latest-writing:end -->"
 LATEST_WRITING_COUNT = 3
 HOMEPAGE_BUNDLE = "_ploy_static/_astro/page.Br0xdvU1.js"
 HOMEPAGE_LATEST_CONST = re.compile(r'const W=("(?:[^"\\]|\\.)*");')
+HOMEPAGE_FORM_CONST = re.compile(r'const T=("(?:[^"\\]|\\.)*");')
 TEARDOWN_REVENUE_BANDS = ["Under 1M", "1 to 5M", "5 to 20M", "20M plus", "Prefer not to say"]
 TEARDOWN_FORM = (
     f'<form class="ss-form not-prose" data-ss-teardown action="{TEARDOWN_ENDPOINT}" method="post" accept-charset="UTF-8" aria-label="Teardown request">'
@@ -323,6 +330,7 @@ TEARDOWN_FORM = (
     '<div class="ss-field ss-field-wide"><label for="td-problem">Main problem</label><textarea id="td-problem" name="main_problem" rows="4" placeholder="What the store is not doing that it should"></textarea></div>'
     "</div>"
     '<input type="hidden" name="source_page" value="">'
+    '<input type="hidden" name="notes" value="ref=direct">'
     '<div class="ss-form-hp" aria-hidden="true"><label for="td-website">Website</label><input id="td-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>'
     f'<button type="submit" class="ss-form-submit {BUTTON_CLASS} disabled:pointer-events-none disabled:opacity-50">{TEARDOWN_LABEL}</button>'
     '<p class="ss-form-status" role="status" aria-live="polite"></p>'
@@ -379,18 +387,20 @@ TEARDOWN_FORM_JS = (
     'function sent(f){busy(f,false);f.classList.add("ss-form-sent");var s=status(f);s.textContent=SENT;s.setAttribute("tabindex","-1");s.focus()}'
     'function failed(f){busy(f,false);var s=status(f);s.textContent=FAILED;var a=d.createElement("a");a.href=mailto(f);a.textContent=MAIL;s.appendChild(a);s.appendChild(d.createTextNode("."))}'
     'function val(f,n){var el=field(f,n);return el?el.value.trim():""}'
-    'function mailto(f){var lines=["Name: "+val(f,"name"),"Email: "+val(f,"email"),"Store: "+val(f,"store_url"),"Revenue: "+val(f,"revenue_band"),"Country: "+val(f,"country"),"","Main problem:",val(f,"main_problem")];'
+    'function mailto(f){var lines=["Name: "+val(f,"name"),"Email: "+val(f,"email"),"Store: "+val(f,"store_url"),"Revenue: "+val(f,"revenue_band"),"Country: "+val(f,"country"),"","Main problem:",val(f,"main_problem"),"","Attribution:",val(f,"notes")];'
     'return"mailto:"+MAIL+"?subject="+encodeURIComponent("Teardown request")+"&body="+encodeURIComponent(lines.join("\\n"))}'
+    'function attrNotes(){try{if(typeof window.__ssAttrNotes==="function"){var v=window.__ssAttrNotes();if(v)return String(v).slice(0,1000)}}catch(e){}return"ref=direct"}'
+    'function stamp(f){var src=field(f,"source_page");if(src)src.value=(location.pathname||"/").slice(0,300);var n=field(f,"notes");if(n)n.value=attrNotes()}'
     "function canFetch(){return!!(window.fetch&&window.Promise&&window.URLSearchParams&&window.FormData)}"
     'function viaFetch(f){return fetch(f.action,{method:"POST",mode:"no-cors",credentials:"omit",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(new FormData(f)).toString()})}'
     'function viaFrame(f){var name="ss-td-"+Date.now(),fr=d.createElement("iframe"),started=false;fr.name=name;fr.setAttribute("aria-hidden","true");fr.tabIndex=-1;'
     'fr.style.cssText="position:absolute;width:1px;height:1px;left:-10000px;border:0";var timer=setTimeout(function(){failed(f)},12e3);'
     "function go(){if(started)return;started=true;fr.onload=function(){clearTimeout(timer);sent(f)};fr.onerror=function(){clearTimeout(timer);failed(f)};f.target=name;try{f.submit()}catch(e){clearTimeout(timer);failed(f)}}"
     "fr.onload=go;d.body.appendChild(fr);setTimeout(go,150)}"
-    'function send(f){if(f.getAttribute("data-busy")==="1"||!validate(f))return;var src=field(f,"source_page");if(src)src.value=location.pathname;'
+    'function send(f){if(f.getAttribute("data-busy")==="1"||!validate(f))return;stamp(f);'
     'var hp=field(f,"website");if(hp&&hp.value){sent(f);return}busy(f,true);if(!canFetch()){viaFrame(f);return}'
     "var p;try{p=viaFetch(f)}catch(e){p=Promise.reject(e)}p.then(function(){sent(f)},function(){viaFrame(f)})}"
-    "function init(){each(d.querySelectorAll(S),function(f){f.noValidate=true;var src=field(f,\"source_page\");if(src)src.value=location.pathname})}"
+    "function init(){each(d.querySelectorAll(S),function(f){f.noValidate=true;stamp(f)})}"
     'd.addEventListener("submit",function(e){var f=e.target;if(!f||!f.matches||!f.matches(S))return;e.preventDefault();send(f)});'
     'd.addEventListener("input",function(e){var el=e.target;if(el&&el.closest&&el.closest(S)&&el.getAttribute("aria-invalid"))setError(el.closest(S),el,"")});'
     'if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",init);else init()'
@@ -430,6 +440,12 @@ MANIFEST_ICONS = [
 # is only granted when localStorage ss_consent is "granted"; ad storage, ad user
 # data and ad personalisation are always denied. The bar itself is created by
 # the script, so with JavaScript off there is no bar and no tag.
+#
+# First-touch attribution sits in the same block so every page, including blog
+# posts, runs it, but it does not read ss_consent and does not set a cookie.
+# It records the first visit that arrives with utm_source, utm_medium or
+# utm_campaign, or with a referrer from another host, and keeps that record
+# for 30 days. The teardown form reads it back through __ssAttrNotes.
 ANALYTICS_START = "<!-- soulstone-analytics:start -->"
 ANALYTICS_END = "<!-- soulstone-analytics:end -->"
 CONSENT_KEY = "ss_consent"
@@ -477,6 +493,35 @@ CONSENT_JS = (
     'window.addEventListener("resize",size);'
     'function init(){var v=get();if(v!=="granted"&&v!=="denied")show()}'
     'if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",init);else init()'
+    "})();"
+)
+# localStorage key ss_attr. First touch wins until the record is 30 days old.
+# Storage access is wrapped so a blocked or full localStorage cannot throw.
+ATTR_KEY = "ss_attr"
+ATTR_JS = (
+    "(function(){if(window.__ssAttr)return;window.__ssAttr=1;"
+    f'var K="{ATTR_KEY}",MAX=1000,TTL=30*864e5;'
+    "function read(){try{var raw=localStorage.getItem(K);if(!raw)return null;var o=JSON.parse(raw);"
+    'if(!o||typeof o!=="object"||typeof o.ts!=="number")return null;if(Date.now()-o.ts>=TTL)return null;return o}catch(e){return null}}'
+    "function write(o){try{localStorage.setItem(K,JSON.stringify(o))}catch(e){}}"
+    'function clean(s,n){return String(s==null?"":s).replace(/[\\x00-\\x1f;]/g," ").replace(/\\s+/g," ").trim().slice(0,n||200)}'
+    "function query(){var q=location.search||\"\",out={},i,p,k,v,parts;if(q.charAt(0)===\"?\")q=q.slice(1);if(!q)return out;parts=q.split(\"&\");"
+    'for(i=0;i<parts.length;i++){if(!parts[i])continue;p=parts[i].split("=");try{k=decodeURIComponent(p[0].replace(/\\+/g," "));'
+    'v=decodeURIComponent((p.length>1?p.slice(1).join("="):"").replace(/\\+/g," "))}catch(e){continue}if(k&&out[k]===undefined)out[k]=v}return out}'
+    'function bare(h){return String(h||"").toLowerCase().replace(/^www\\./,"")}'
+    'function refHost(){var ref=document.referrer||"",m,h;m=/^[a-z][a-z0-9+.-]*:\\/\\/([^\\/:?#]+)/i.exec(ref);if(!m)return "";'
+    'h=m[1].toLowerCase().replace(/:\\d+$/,"");if(!h||bare(h)===bare(location.hostname))return "";return bare(h)}'
+    "function capture(){var cur=read();if(cur)return cur;var q;try{q=query()}catch(e){q={}}"
+    "var o={utm_source:clean(q.utm_source),utm_medium:clean(q.utm_medium),utm_campaign:clean(q.utm_campaign),utm_content:clean(q.utm_content),"
+    'referrer_host:clean(refHost(),253),landing:clean(location.pathname||"/",300),ts:Date.now()};'
+    "if(!o.utm_source&&!o.utm_medium&&!o.utm_campaign&&!o.referrer_host)return null;write(o);return read()||o}"
+    'function notes(o){if(!o)return"ref=direct";var parts=[];'
+    'if(o.utm_source)parts.push("utm_source="+o.utm_source);if(o.utm_medium)parts.push("utm_medium="+o.utm_medium);'
+    'if(o.utm_campaign)parts.push("utm_campaign="+o.utm_campaign);if(o.utm_content)parts.push("utm_content="+o.utm_content);'
+    'if(o.referrer_host)parts.push("ref="+o.referrer_host);if(o.landing)parts.push("landing="+o.landing);'
+    'var s=parts.length?parts.join("; "):"ref=direct";return s.length>MAX?s.slice(0,MAX):s}'
+    'window.__ssAttrNotes=function(){try{return notes(read()||capture())}catch(e){return"ref=direct"}};'
+    "try{capture()}catch(e){}"
     "})();"
 )
 TAGS_UL = '<ul class="mt-14 flex flex-wrap gap-2'
@@ -1143,6 +1188,15 @@ def upsert_latest_writing_bundle(text: str, html: str, where: str) -> str:
     return out
 
 
+def upsert_teardown_form_bundle(text: str, where: str) -> str:
+    """Keep const T in the HomePage bundle in lockstep with TEARDOWN_FORM."""
+    encoded = json.dumps(TEARDOWN_FORM, ensure_ascii=False)
+    out, n = HOMEPAGE_FORM_CONST.subn(lambda _: f"const T={encoded};", text, 1)
+    if not n:
+        raise BuildError(f"{where}: no form constant (const T=\"...\")")
+    return out
+
+
 def upsert_teardown_form(h: str, where: str) -> str:
     """Write the current form between the teardown-form markers on a page that carries them."""
     starts, ends = h.count(TEARDOWN_FORM_START), h.count(TEARDOWN_FORM_END)
@@ -1370,6 +1424,7 @@ def analytics_block(site: Site) -> str:
         f'<script async src="https://www.googletagmanager.com/gtag/js?id={gid}"></script>\n'
         f"<script>gtag('js', new Date()); gtag('config','{gid}');</script>\n"
         f"<style>{CONSENT_CSS}</style><script>{CONSENT_JS}</script>\n"
+        f"<script>{ATTR_JS}</script>\n"
         f"{ANALYTICS_END}"
     )
 
@@ -1489,7 +1544,8 @@ def build(root: Path, include_drafts: bool) -> dict:
     latest_html = render_latest_writing(posts)
     check_copy(latest_html, "index.html Latest writing")
     write("index.html", upsert_latest_writing((root / "index.html").read_text(encoding="utf-8"), latest_html, "index.html"))
-    write(HOMEPAGE_BUNDLE, upsert_latest_writing_bundle((root / HOMEPAGE_BUNDLE).read_text(encoding="utf-8"), latest_html, HOMEPAGE_BUNDLE))
+    bundle = upsert_latest_writing_bundle((root / HOMEPAGE_BUNDLE).read_text(encoding="utf-8"), latest_html, HOMEPAGE_BUNDLE)
+    write(HOMEPAGE_BUNDLE, upsert_teardown_form_bundle(bundle, HOMEPAGE_BUNDLE))
 
     tags: dict[str, list[dict]] = {}
     for p in posts:
