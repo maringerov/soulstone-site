@@ -1,14 +1,14 @@
 ---
 title: "How do I migrate to checkout extensibility after checkout.liquid and Additional scripts?"
 slug: checkout-extensibility-migration-tracking
-description: "Tracking moves to Customer events, visible changes move to UI extensions, and theme code never runs in checkout. The 15-minute check and the fixes."
+description: "How to customize checkout with checkout extensibility after checkout.liquid deprecation: tracking moves to Customer events, visible changes move to UI extensions, and theme code never runs in checkout."
 date: 2026-10-19
-updated: 2026-10-23
+updated: 2026-11-13
 tags: [shopify, checkout-extensibility, tracking, customer-events, shopify-qa]
 draft: false
 ---
 
-Short answer: everything that used to live in checkout.liquid or in the Additional scripts box now has one of two homes. Tracking goes to Customer events, as an app pixel or a custom pixel. Anything the buyer sees goes to checkout and customer account UI extensions, as blocks you place in the checkout editor. Code in your theme never runs in checkout or on the thank you page, so a tag in `theme.liquid` is not a backup.
+How to customize checkout with checkout extensibility after checkout.liquid deprecation: everything that used to live in checkout.liquid or in the Additional scripts box now has one of two homes. Tracking goes to Customer events, as an app pixel or a custom pixel. Anything the buyer sees goes to checkout and customer account UI extensions, as blocks you place in the checkout editor. Code in your theme never runs in checkout or on the thank you page, so a tag in `theme.liquid` is not a backup.
 
 For stores on a non-Plus plan, the deadline to upgrade the Thank you and Order status pages was 26 August 2026. Since then, old scripts on those pages don't run. Purchases kept coming in. What stopped, on many stores, is some of the tools that report them.
 
@@ -74,7 +74,7 @@ For ad platforms, also turn on the server-side option if the app has one (enhanc
 
 Anything the buyer saw, such as a delivery note, a survey, an upsell or a loyalty message, becomes a block. Install an app that offers it as a checkout or customer account block, or build a small UI extension in a custom app. Then place it in the checkout editor.
 
-Non-Plus stores can customize the Thank you and Order status pages this way. Blocks on the information, shipping and payment steps are Plus only. For the full map of which tool takes which change, including Functions and branding, see [how to customize Shopify checkout with extensibility](/blog/customize-shopify-checkout-extensibility/).
+Non-Plus stores can customize the Thank you and Order status pages this way. Blocks on the information, shipping and payment steps are Plus only. For the full map of which tool takes which change, including Functions and branding, see [how to customize Shopify checkout with extensibility](/blog/customize-shopify-checkout-extensibility/). Native custom checkout fields from Fall 26 are not live yet and will not ship before Black Friday; [Shopify Fall 26 Edition checkout](/blog/fall-26-checkout-bfcm/) has what is live.
 
 ## FAQ
 

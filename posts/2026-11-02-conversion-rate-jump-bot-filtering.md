@@ -1,8 +1,9 @@
 ---
-title: "Your Shopify conversion rate jumped this autumn and nothing changed: it is the bot filter"
+title: "Why did my Shopify conversion rate jump? Bot filtering and the session measurement update"
 slug: conversion-rate-jump-bot-filtering
-description: "Shopify changed how it counts sessions on 21 to 23 September 2026 and now filters bots by default. Why conversion rate moved, and what to compare for Black Friday."
+description: "Why did my Shopify conversion rate jump? Bot filtering and the session measurement update from 21 to 23 September 2026 left bots out of session reports, so the rate rose while orders stayed the same."
 date: 2026-11-02
+updated: 2026-11-13
 tags: [shopify, analytics, conversion-rate, black-friday, premium-brands]
 draft: false
 ---
@@ -61,6 +62,8 @@ What I recommend for November:
 3. Use October 2026 as the new session baseline. If you want a conversion rate target, base it on the weeks after the update, not on last year.
 4. In reports that have the Human or bot session filter, keep the same setting for every period you compare. The Home page and Live View always hide bots and can't be switched.
 5. Read any before and after test with care. A test that ran its two versions side by side is fine, because both arms were measured the same way. A "we changed the PDP in September and conversion went up" story needs checking against orders first.
+
+Checkout layout is a separate baseline. [Shopify Fall 26 Edition checkout](/blog/fall-26-checkout-bfcm/) is what is live before Black Friday, and it is not this measurement change.
 
 ## A five minute check in your admin
 

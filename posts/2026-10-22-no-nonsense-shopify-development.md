@@ -3,6 +3,7 @@ title: "No-nonsense Shopify development: take complexity out before you add more
 slug: no-nonsense-shopify-development
 description: "Most overblown Shopify stacks don't need another app or a rebuild. Find who writes what, use what Shopify already runs, and ship small. Four rules I work by, with two real cases."
 date: 2026-10-22
+updated: 2026-11-13
 tags: [shopify, development, architecture, apps, shopify-plus]
 draft: false
 ---
@@ -47,13 +48,13 @@ So we didn't touch inventory at all. Flow sets a small flag on the variant when 
 
 If the team will want to change it, it belongs in theme settings, a metafield or a metaobject, not in Liquid or JavaScript. Promo dates, thresholds, gift products, banner copy and which collection a section pulls from are all settings.
 
-Hardcoded values are how a store ends up needing a developer for a Tuesday campaign. They are also how old promos quietly come back, because a date in the code never expires by itself.
+Hardcoded values are how a store ends up needing a developer for a Tuesday campaign. They are also how old promos quietly come back, because a date in the code never expires by itself. For a campaign that stacks gifts, members-only drops and hidden products, I wrote down the switches in [Shopify merchandising for complex campaigns](/blog/shopify-campaign-merchandising-flows/).
 
 My test is simple: if the marketing team can't change it in the theme editor or the admin, I ask why not.
 
 ## Rule 4: ship small and know what it touches
 
-On a live store I change one thing at a time. I pull the live theme first, change the files I need, push only those, then pull again to check that nothing else moved. Before the push I write one line on what the change can affect: which templates, which apps, which markets.
+On a live store I change one thing at a time. I pull the live theme first, change the files I need, push only those, then pull again to check that nothing else moved. Before the push I write one line on what the change can affect: which templates, which apps, which markets. That only stays safe if content lives on one live theme. [Single theme vs multi-theme releases](/blog/shopify-single-theme-vs-multi-theme-releases/) is the release version of the same rule.
 
 It's slower on paper. In practice it's faster, because nothing breaks that needs a second fix, and anything that does go wrong points straight to one change.
 
