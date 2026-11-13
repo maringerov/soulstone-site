@@ -3,7 +3,7 @@ title: "What Shopify's AI channel checkout defaults are and how to change them"
 slug: ai-channel-checkout-defaults
 description: "By default Shopify shares products with AI channels and runs direct checkout in Google, Meta and Copilot. Open Sales channels > Agentic, turn off Allow Shopify to manage for me, then set each channel."
 date: 2026-10-29
-updated: 2026-10-30
+updated: 2026-11-13
 tags: [shopify, agentic-commerce, checkout, ai-channels, premium-brands]
 draft: false
 ---
@@ -75,7 +75,7 @@ A 10-minute check once you've saved:
 3. Look at the performance view on the same page. It shows sales, orders and online store sessions per AI channel, so you can see whether any of this already moves money for you.
 4. Write down what you chose and why, so whoever runs the store in November knows it was on purpose.
 
-If tracking is still patchy after the checkout changes this summer, start with [the checkout extensibility tracking check](/blog/checkout-extensibility-migration-tracking/). Orders from a direct checkout won't show up in client-side tags at all, so it helps to know which numbers you trust before you add a channel your pixels can't see.
+If tracking is still patchy after the checkout changes this summer, start with [the checkout extensibility tracking check](/blog/checkout-extensibility-migration-tracking/). Orders from a direct checkout won't show up in client-side tags at all, so it helps to know which numbers you trust before you add a channel your pixels can't see. For what checkout itself can show shoppers before Black Friday, see [Shopify Fall 26 Edition checkout](/blog/fall-26-checkout-bfcm/). If Shopify conversion rate jumped in late September, that is [bot filtering and the session measurement update](/blog/conversion-rate-jump-bot-filtering/), not a better checkout.
 
 ## Questions I get about this
 

@@ -3,11 +3,12 @@ title: "Shopify merchandising for complex campaigns: how to run launches, gifts 
 slug: shopify-campaign-merchandising-flows
 description: "How to set up Shopify merchandising for campaigns and promotions: give each product state one switch, keep cart and checkout rules in sync, and test the whole flow before launch."
 date: 2026-11-09
+updated: 2026-11-13
 tags: [shopify, merchandising, promotions, campaigns, shopify-plus, premium-brands]
 draft: false
 ---
 
-Short answer: if your Shopify campaigns need members-only drops, preorders, spend-based gifts, free samples and products that only show in one collection, the setup works when every product state has one switch, one owner and one place where it is set. Write those switches down as a short merchandising guide, keep anything that lives in two places (theme and checkout) in sync on purpose, and test each campaign in a real cart before it goes live. Most campaign bugs I see are not code bugs. They are two tools that both think they own the same product.
+Shopify merchandising for complex campaigns, launches, gifts and members-only drops works when every product state has one switch, one owner and one place where it is set. Write those switches down as a short merchandising guide, keep anything that lives in two places (theme and checkout) in sync on purpose, and test each campaign in a real cart before it goes live. Most campaign bugs I see are not code bugs. They are two tools that both think they own the same product.
 
 ## Why do campaigns get messy on Shopify?
 
@@ -61,7 +62,7 @@ Putting a sample into the spend tiers, or a spend gift into the sample widget, d
 
 Seasonal campaigns repeat every year, so build them as content, not code. For a December calendar campaign we built one section driven by metaobjects: one entry per day, with a title, image, call to action, an optional reward badge and an optional start and end time. The doors unlock on the store's own timezone. The team fills in the entries in the admin and adds the section in the theme editor. Next year they change the year and the content, and no one touches the theme code.
 
-The same idea works for launch edits, campaign banners and gift messaging. If the merchandising team has to open a ticket to change a date, the flow is too tightly tied to the code.
+The same idea works for launch edits, campaign banners and gift messaging. If the merchandising team has to open a ticket to change a date, the flow is too tightly tied to the code. That also means keeping one live theme, not a copy per campaign. I wrote up [single theme vs multi-theme releases](/blog/shopify-single-theme-vs-multi-theme-releases/).
 
 ## What should you test before a campaign goes live?
 
@@ -85,7 +86,7 @@ Not for most of it. Tags, templates, metafields and theme settings work on every
 
 ### Should I use an app for gift with purchase or build it in the theme?
 
-It depends on how many offer types you run. One simple gift is fine in an app. Several tiers, markets and members-only rules usually work better in the theme plus one checkout rule, with a clear guide. I wrote about the setup options in [How to add a gift with purchase on Shopify](/blog/shopify-gift-with-purchase-setup/).
+It depends on how many offer types you run. One simple gift is fine in an app. Several tiers, markets and members-only rules usually work better in the theme plus one checkout rule, with a clear guide. I wrote about the setup options in [How to add gift with purchase in Shopify](/blog/shopify-gift-with-purchase-setup/).
 
 ### Why did a product disappear from the store?
 

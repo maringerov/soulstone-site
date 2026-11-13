@@ -1,13 +1,14 @@
 ---
-title: "One live Shopify theme or a copy per campaign? How to release content and code without losing either"
+title: "Shopify single theme vs multi-theme releases: keep one live theme, not a copy per campaign"
 slug: shopify-single-theme-vs-multi-theme-releases
-description: "Should you duplicate your Shopify theme for every campaign or keep one live theme? Where content and code should live, and a release routine that loses neither."
+description: "Shopify single theme vs multi-theme: keep one live theme as the only place content is edited, and use unpublished copies for code, not a duplicate theme per campaign."
 date: 2026-11-12
+updated: 2026-11-13
 tags: [shopify, themes, releases, theme-editor, premium-brands]
 draft: false
 ---
 
-Short answer: should a Shopify store release from one live theme, or duplicate the theme for every campaign and publish the copy? For most premium brands, keep one live theme as the only place where content is edited, and use unpublished copies for code and previews only. A duplicated theme is a fork. Every template, section setting and translation the team adds to one copy is missing from the other, and the next publish quietly removes it. If you do run a theme per campaign, freeze content on the old theme and compare the two before you publish.
+Short answer: on the single theme vs multi-theme question, keep one live theme as the only place where content is edited, and use unpublished copies for code and previews only. A duplicated theme is a fork. Every template, section setting and translation the team adds to one copy is missing from the other, and the next publish quietly removes it. If you do run a theme per campaign, freeze content on the old theme and compare the two before you publish.
 
 ## Why does content disappear when we publish a new theme?
 
@@ -34,7 +35,7 @@ Best for most brands. Content has one home, the theme editor always shows the tr
 It needs two habits:
 
 - New layouts ship as new, unassigned templates, then get assigned. Nobody sees them until you say so.
-- Timed campaigns use dates and settings, not a theme swap. Put start and end dates, thresholds and banner content in theme settings or metaobjects, so a campaign is switched by the calendar, not by a publish.
+- Timed campaigns use dates and settings, not a theme swap. Put start and end dates, thresholds and banner content in theme settings or metaobjects, so a campaign is switched by the calendar, not by a publish. For stacked offers (members-only, gifts, hidden collections), I use the [campaign merchandising flows](/blog/shopify-campaign-merchandising-flows/) setup.
 
 ### A theme per campaign
 

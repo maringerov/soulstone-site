@@ -1,13 +1,14 @@
 ---
-title: "Shopify Fall '26 checkout before Black Friday: what is live today and what is only coming soon"
+title: "Shopify Fall 26 Edition checkout: what is live before Black Friday"
 slug: fall-26-checkout-bfcm
-description: "Fall '26 checkout before Black Friday: payment tiles are rolling out; custom fields and Apple Pay outside Safari are coming soon."
+description: "Shopify Fall 26 Edition checkout: what is live before Black Friday. Payment tiles are rolling out; native custom fields and Apple Pay outside Safari are still coming soon."
 date: 2026-11-05
+updated: 2026-11-13
 tags: [shopify, checkout, fall-edition, black-friday, premium-brands]
 draft: false
 ---
 
-Short answer: Shopify's Fall '26 Edition ("Exponential") landed on 28 October 2026 with 150+ updates. For Black Friday on 27 November, treat checkout as a timing problem, not a feature list. Payment methods as side-by-side tiles are already rolling out. Built-in custom checkout fields will not ship before or during Black Friday Cyber Monday, and Apple Pay outside Safari is still coming soon. Plan peak-season checkout work only around what shoppers can see today.
+Short answer: Shopify Fall 26 Edition checkout, what is live before Black Friday, is payment methods as side-by-side tiles already rolling out. Built-in custom checkout fields will not ship before or during Black Friday Cyber Monday, and Apple Pay outside Safari is still coming soon. Shopify's Fall '26 Edition ("Exponential") landed on 28 October 2026 with 150+ updates. For Black Friday on 27 November, treat checkout as a timing problem, not a feature list. Plan peak-season checkout work only around what shoppers can see today.
 
 ## What do the Edition status labels mean?
 
@@ -30,7 +31,7 @@ The Fall '26 Edition page lists the same change as "Simpler layout for payment m
 
 ### Why that matters for CRO
 
-If you ran payment-step tests earlier this year against a radio list, the page shape has changed for stores that already have tiles. The offer that sat next to a long list may sit differently next to a compact grid. Do not credit or blame a campaign for a layout Shopify moved under you. Note the payment layout in the baseline for November, the same way you note the September session measurement change when you read conversion rate.
+If you ran payment-step tests earlier this year against a radio list, the page shape has changed for stores that already have tiles. The offer that sat next to a long list may sit differently next to a compact grid. Do not credit or blame a campaign for a layout Shopify moved under you. Note the payment layout in the baseline for November, the same way you note the September [session measurement update and bot filtering](/blog/conversion-rate-jump-bot-filtering/) when you read conversion rate.
 
 ## What must not be planned for Black Friday?
 

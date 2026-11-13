@@ -1,14 +1,15 @@
 ---
-title: "How do I add a gift with purchase on Shopify?"
+title: "How to add gift with purchase in Shopify"
 slug: shopify-gift-with-purchase-setup
-description: "Native Buy X Get Y works, but Shopify never adds the gift to the cart for you. When that is fine, when you need a Function or an app, and the checkout edge cases."
+description: "How to add gift with purchase in Shopify: the native Buy X get Y discount does not add the gift to the cart automatically. Set up Buy X get Y first, then theme or app auto-add if you need it."
 date: 2026-10-23
+updated: 2026-11-13
 tags: [shopify, conversion, apps, shopify-plus]
 faq_schema: true
 draft: false
 ---
 
-Short answer: use an automatic Buy X Get Y discount with the gift at 100% off. That works on every plan, needs no app and takes ten minutes. What Shopify does not do is put the gift in the cart: the discount makes the gift free once the shopper adds it, and that is all. Auto-adding needs cart logic in the theme or an app, and on Shopify Plus a Function keeps the rules tight so the gift is never free on an order that didn't qualify. Whatever you pick, test it in accelerated checkout too, because Shop Pay and the express buttons skip the cart.
+Short answer: the native Buy X get Y discount does not add the gift to the cart automatically. Shopify only makes the gift free once the shopper adds it. Start there: an automatic Buy X get Y at 100% off works on every plan, needs no app and takes ten minutes. Auto-add comes after, with cart logic in the theme or an app, and on Shopify Plus a Function keeps the rules tight so the gift is never free on an order that didn't qualify. Whatever you pick, test it in accelerated checkout too, because Shop Pay and the express buttons skip the cart.
 
 The rest of this post is the setup, a comparison of the four ways to do it, what breaks in checkout, and the checklist I run before a campaign goes live.
 
@@ -89,7 +90,7 @@ The limits are real:
 
 ### When an app is right
 
-When the campaign needs a popup with a choice of gifts, several thresholds with a progress bar, or a new rule every week, an app earns its place. It does the same AJAX work as above, with a settings page and a widget, and good ones handle the quantity guard and the removal case for you.
+When the campaign needs a popup with a choice of gifts, several thresholds with a progress bar, or a new rule every week, an app earns its place. It does the same AJAX work as above, with a settings page and a widget, and good ones handle the quantity guard and the removal case for you. If the campaign also has members-only products, spend tiers and hidden collections, the gift is one state among several. [Shopify merchandising for complex campaigns](/blog/shopify-campaign-merchandising-flows/) is the map for that.
 
 Treat it like any other app in the critical path: one app, not two; check what it adds to every page load; and run the test list below against it. Apps get the subtotal rule and the express checkout gap wrong too.
 

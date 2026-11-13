@@ -3,6 +3,7 @@ title: "How do I customize Shopify checkout with extensibility?"
 slug: customize-shopify-checkout-extensibility
 description: "Visible changes go in checkout UI extensions, logic goes in Shopify Functions, looks go in the branding API. What each can do, and what needs Plus."
 date: 2026-10-23
+updated: 2026-11-13
 tags: [shopify, shopify-plus, checkout-extensibility, ui-extensions]
 faq_schema: true
 draft: false
@@ -162,7 +163,7 @@ Not for branding, for Thank you and Order status page blocks, for Functions insi
 
 ### Can I add a custom field to checkout?
 
-Yes. A checkout UI extension renders the field and saves the value as a cart attribute, a line item attribute or a metafield, so it appears on the order. On Plus it can sit on any checkout step. On other plans it can only sit on the Thank you or Order status page, which works for a survey but not for information you need before payment.
+Yes. A checkout UI extension renders the field and saves the value as a cart attribute, a line item attribute or a metafield, so it appears on the order. On Plus it can sit on any checkout step. On other plans it can only sit on the Thank you or Order status page, which works for a survey but not for information you need before payment. Shopify also announced native custom checkout fields in Fall 26. They are not live yet and will not ship before Black Friday. [Shopify Fall 26 Edition checkout: what is live before Black Friday](/blog/fall-26-checkout-bfcm/) has the status.
 
 ### Can I hide or rename a payment or shipping method?
 
