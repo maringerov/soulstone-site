@@ -46,7 +46,7 @@ Only what Shopify loads itself:
 - Blocks from checkout and customer account UI extensions, placed in the checkout editor.
 - Shopify's own features and settings.
 
-Your theme, its app embeds and anything in `theme.liquid` stop at the cart. That is by design. Shopify keeps checkout closed to theme code so it stays secure and upgrade-safe for every store.
+Your theme, its app embeds and anything in `theme.liquid` stop at the cart. That is by design. Gifts and other cart rules that live in the theme need a matching checkout rule, which I walk through in [Shopify merchandising for complex campaigns](/blog/shopify-campaign-merchandising-flows/). Shopify keeps checkout closed to theme code so it stays secure and upgrade-safe for every store.
 
 ## How do I replace a tracking script that stopped?
 
