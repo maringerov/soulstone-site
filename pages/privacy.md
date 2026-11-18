@@ -3,7 +3,7 @@ title: "Privacy and cookies"
 eyebrow: "Privacy"
 description: "How soulstone.co uses Google Analytics 4 with Consent Mode, what is stored in your browser and how to change your cookie choice."
 path: /privacy
-lastmod: 2026-11-02
+lastmod: 2026-11-18
 ---
 
 soulstone.co uses Google Analytics 4 to see how the site is used. It only runs if you accept analytics cookies in the bar at the bottom of the page.
@@ -32,7 +32,7 @@ Your choice is stored in your browser's localStorage under the key `ss_consent`,
 
 What you enter in the teardown form on the homepage and on [/teardown/](/teardown/) (name, email, store URL, revenue band, country, the problem you describe and the page you sent it from) goes to a Google Apps Script owned by Soulstone and is stored in a Google Sheet there. It is used to reply to your request and for nothing else: no list, no newsletter, no sharing. Ask at the address below if you want it deleted.
 
-If you arrive from another site or from a link with campaign parameters, that first visit is stored in localStorage on this device for 30 days and is included with the teardown form only when you submit it; it does not use cookies and does not depend on your analytics choice.
+If you arrive from another site or from a link with campaign parameters, that first visit is stored in localStorage on this device for 30 days and is included with the teardown form only when you submit it; a click from another page on this site is included as the path you came from; it does not use cookies and does not depend on your analytics choice.
 
 ## Contact
 
