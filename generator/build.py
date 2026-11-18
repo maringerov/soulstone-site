@@ -15,9 +15,9 @@ Sources
 Outputs (generator-owned, never hand edit)
   blog/<slug>/index.html for every Markdown post, each with one in-article
     Win Chat promo card at the section break nearest the middle of the body
-    and one teardown card (a button to /teardown/ plus a line on what the 30
-    minutes cover and who they are for) between the body and the author box
-    (legacy posts get both cards in place)
+    and one teardown card (eyebrow, heading, a line on what the 30 minutes
+    cover and who they are for, then a button to /teardown/) between the body
+    and the author box (legacy posts get both cards in place)
   <path>/index.html for every Markdown page
   blog/index.html, tag/<tag>/index.html
   the teardown request form (TEARDOWN_FORM) between the teardown-form markers
@@ -229,12 +229,14 @@ PROMO_HEAD = f"<style>{PROMO_CSS}</style><script>{PROMO_JS}</script>"
 # not-prose so the typography plugin leaves it alone.
 ARTICLE_PROMO_START = "<!-- win-chat-promo:start -->"
 ARTICLE_PROMO_END = "<!-- win-chat-promo:end -->"
+# Card chrome is shared with the end-of-post teardown block (.ss-teardown-cta)
+# so the two asides match without copying the padding, green border or tint.
 ARTICLE_PROMO_CSS = (
-    ".ss-article-promo{margin:3rem 0;padding:1.5rem;border:1px solid color-mix(in oklab,var(--ploy-accent-primary)40%,transparent);"
+    ".ss-article-promo,.ss-teardown-cta{margin:3rem 0;padding:1.5rem;border:1px solid color-mix(in oklab,var(--ploy-accent-primary)40%,transparent);"
     "border-top:2px solid var(--ploy-accent-primary);background:color-mix(in oklab,var(--ploy-neutral-secondary)92%,transparent)}"
-    ".ss-article-promo .ss-article-promo-cta{width:100%}"
-    "@media (min-width:40rem){.ss-article-promo{padding:2rem}.ss-article-promo .ss-article-promo-cta{width:auto}}"
-    "@media (min-width:64rem){.ss-article-promo{margin:3.5rem 0;padding:2.5rem}}"
+    ".ss-article-promo .ss-article-promo-cta,.ss-teardown-cta .ss-teardown-cta-button{width:100%}"
+    "@media (min-width:40rem){.ss-article-promo,.ss-teardown-cta{padding:2rem}.ss-article-promo .ss-article-promo-cta,.ss-teardown-cta .ss-teardown-cta-button{width:auto}}"
+    "@media (min-width:64rem){.ss-article-promo,.ss-teardown-cta{margin:3.5rem 0;padding:2.5rem}}"
 )
 ARTICLE_PROMO = (
     f"{ARTICLE_PROMO_START}"
@@ -268,20 +270,22 @@ BUTTON_CLASS = (
     "transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ploy-accent-primary/60 "
     "bg-ploy-accent-primary text-ploy-button-primary-text hover:bg-ploy-accent-primary-400 h-14 px-8 text-[0.8rem]"
 )
-# One card at the end of every post, between the body and the author box. The
-# markers let a rebuild replace it in place; it carries not-prose so the
-# typography plugin leaves it alone, and it holds no <div> because
-# article_body_span() finds the end of the body by the last </div> before the
-# author box.
+# One card at the end of every post, between the body and the author box. Same
+# order as the mid-post Win Chat promo: eyebrow, heading, qualifier line, then
+# the button. Same card chrome as .ss-article-promo (shared CSS, no extra
+# hairline). The markers let a rebuild replace it in place; it carries
+# not-prose so the typography plugin leaves it alone, and it holds no <div>
+# because article_body_span() finds the end of the body by the last </div>
+# before the author box.
 TEARDOWN_CTA_START = "<!-- teardown-cta:start -->"
 TEARDOWN_CTA_END = "<!-- teardown-cta:end -->"
 TEARDOWN_CTA = (
     f"{TEARDOWN_CTA_START}"
-    '<aside class="not-prose ss-teardown-cta mt-14 border-t border-ploy-border-primary/50 pt-10" aria-label="Book a teardown">'
+    '<aside class="not-prose ss-teardown-cta" aria-label="Book a teardown">'
     '<p class="font-mono text-[0.72rem] uppercase tracking-[0.24em] text-ploy-accent-primary">Next step</p>'
     '<p class="mt-4 font-heading text-2xl leading-tight tracking-tight text-ploy-text-primary sm:text-3xl">Start with a 30-minute store teardown.</p>'
-    f'<a href="{TEARDOWN_PATH}" class="ss-teardown-cta-button mt-8 {BUTTON_CLASS}">{TEARDOWN_LABEL}</a>'
     f'<p class="{TEARDOWN_NOTE_CLASS}">{TEARDOWN_NOTE}</p>'
+    f'<a href="{TEARDOWN_PATH}" class="ss-teardown-cta-button mt-8 {BUTTON_CLASS}">{TEARDOWN_LABEL}</a>'
     "</aside>"
     f"{TEARDOWN_CTA_END}"
 )
@@ -407,14 +411,15 @@ TEARDOWN_FORM_JS = (
     "})();"
 )
 TEARDOWN_FORM_HEAD = f"<style>{TEARDOWN_FORM_CSS}</style><script>{TEARDOWN_FORM_JS}</script>"
-# Below 40rem (Tailwind sm) the post card button spans the column, and the
-# hero copy on the static pages (.ss-hero-copy) is reordered so the teardown
-# button and its note come straight after the heading and the intro paragraph
-# (.ss-hero-intro) moves below them. The compiled Tailwind CSS has no
-# responsive order utilities, so this lives here.
+# Below 40rem (Tailwind sm) the hero copy on the static pages (.ss-hero-copy)
+# is reordered so the teardown button and its note come straight after the
+# heading and the intro paragraph (.ss-hero-intro) moves below them. The
+# compiled Tailwind CSS has no responsive order utilities, so this lives here.
+# The post card button width is in ARTICLE_PROMO_CSS, shared with the Win Chat
+# promo, so it is not repeated here.
 TEARDOWN_CSS = (
-    "@media (max-width:39.9375rem){.ss-teardown-cta .ss-teardown-cta-button{width:100%}"
-    ".ss-hero-copy{display:flex;flex-direction:column}.ss-hero-copy .ss-hero-intro{order:1}}"
+    "@media (max-width:39.9375rem){.ss-hero-copy{display:flex;flex-direction:column}"
+    ".ss-hero-copy .ss-hero-intro{order:1}}"
 )
 TEARDOWN_HEAD = f"<style>{TEARDOWN_CSS}</style>"
 # Favicon and app icons. The SVG carries a solid rounded-square background so
@@ -445,7 +450,10 @@ MANIFEST_ICONS = [
 # posts, runs it, but it does not read ss_consent and does not set a cookie.
 # It records the first visit that arrives with utm_source, utm_medium or
 # utm_campaign, or with a referrer from another host, and keeps that record
-# for 30 days. The teardown form reads it back through __ssAttrNotes.
+# for 30 days. A same-host referrer is not stored as first touch; when the
+# form reads the notes back, that path is appended as from=<pathname> so a
+# click from a blog post is visible without overwriting an external first
+# touch. The teardown form reads the string through __ssAttrNotes.
 ANALYTICS_START = "<!-- soulstone-analytics:start -->"
 ANALYTICS_END = "<!-- soulstone-analytics:end -->"
 CONSENT_KEY = "ss_consent"
@@ -509,16 +517,19 @@ ATTR_JS = (
     'for(i=0;i<parts.length;i++){if(!parts[i])continue;p=parts[i].split("=");try{k=decodeURIComponent(p[0].replace(/\\+/g," "));'
     'v=decodeURIComponent((p.length>1?p.slice(1).join("="):"").replace(/\\+/g," "))}catch(e){continue}if(k&&out[k]===undefined)out[k]=v}return out}'
     'function bare(h){return String(h||"").toLowerCase().replace(/^www\\./,"")}'
-    'function refHost(){var ref=document.referrer||"",m,h;m=/^[a-z][a-z0-9+.-]*:\\/\\/([^\\/:?#]+)/i.exec(ref);if(!m)return "";'
-    'h=m[1].toLowerCase().replace(/:\\d+$/,"");if(!h||bare(h)===bare(location.hostname))return "";return bare(h)}'
+    'function refMatch(){var ref=document.referrer||"",m;m=/^[a-z][a-z0-9+.-]*:\\/\\/([^\\/:?#]+)(?::\\d+)?([^?#]*)/i.exec(ref);'
+    'if(!m)return null;return{host:bare(m[1].toLowerCase()),path:m[2]||"/"}}'
+    'function refHost(){var r=refMatch();if(!r||!r.host||r.host===bare(location.hostname))return "";return r.host}'
+    'function refFrom(){var r=refMatch();if(!r||!r.host||r.host!==bare(location.hostname))return "";return clean(r.path,300)}'
     "function capture(){var cur=read();if(cur)return cur;var q;try{q=query()}catch(e){q={}}"
     "var o={utm_source:clean(q.utm_source),utm_medium:clean(q.utm_medium),utm_campaign:clean(q.utm_campaign),utm_content:clean(q.utm_content),"
     'referrer_host:clean(refHost(),253),landing:clean(location.pathname||"/",300),ts:Date.now()};'
     "if(!o.utm_source&&!o.utm_medium&&!o.utm_campaign&&!o.referrer_host)return null;write(o);return read()||o}"
-    'function notes(o){if(!o)return"ref=direct";var parts=[];'
+    'function notes(o){var parts=[],from;if(o){'
     'if(o.utm_source)parts.push("utm_source="+o.utm_source);if(o.utm_medium)parts.push("utm_medium="+o.utm_medium);'
     'if(o.utm_campaign)parts.push("utm_campaign="+o.utm_campaign);if(o.utm_content)parts.push("utm_content="+o.utm_content);'
-    'if(o.referrer_host)parts.push("ref="+o.referrer_host);if(o.landing)parts.push("landing="+o.landing);'
+    'if(o.referrer_host)parts.push("ref="+o.referrer_host);if(o.landing)parts.push("landing="+o.landing)}'
+    'from=refFrom();if(from)parts.push("from="+from);'
     'var s=parts.length?parts.join("; "):"ref=direct";return s.length>MAX?s.slice(0,MAX):s}'
     'window.__ssAttrNotes=function(){try{return notes(read()||capture())}catch(e){return"ref=direct"}};'
     "try{capture()}catch(e){}"

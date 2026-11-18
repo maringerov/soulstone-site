@@ -119,8 +119,11 @@ the URL has `utm_source`, `utm_medium` or `utm_campaign` (and, when present,
 `utm_content`), or `document.referrer` is another host, it stores
 `{utm_source, utm_medium, utm_campaign, utm_content, referrer_host, landing, ts}`
 in `localStorage` under `ss_attr`. The first record wins for 30 days; a later
-visit does not overwrite it. Storage access sits in `try/catch`. The teardown
-form reads it back as a `notes` value. With JavaScript off, nothing is stored.
+visit does not overwrite it. Same-host referrers are not stored as first
+touch. When the teardown form reads the notes back, a same-host referrer is
+appended as `from=<pathname>` (no query string) so a click from a blog post
+is visible without replacing an external first touch. Storage access sits in
+`try/catch`. With JavaScript off, nothing is stored.
 
 ## Favicon and app icons
 
@@ -239,9 +242,12 @@ card, or if the card turns up on a page that is not a post.
 
 Every post ends with one teardown card (`TEARDOWN_CTA` in `build.py`, wrapped
 in `<!-- teardown-cta:start -->` / `:end -->`) placed directly before the
-author box: an eyebrow, a heading, a button to `/teardown/` (the same target as
-the header and footer buttons) and one line (`TEARDOWN_NOTE`) on what the 30
-minutes cover and who they are for, built from the FAQ and landing page copy.
+author box, in the same order as the mid-post Win Chat promo: an eyebrow, a
+heading, one line (`TEARDOWN_NOTE`) on what the 30 minutes cover and who they
+are for, then a button to `/teardown/` (the same target as the header and
+footer buttons, with no query string). The card uses the same CSS rules as
+`.ss-article-promo` (padding, green border, tinted background) and has no
+extra top hairline. The note is built from the FAQ and landing page copy.
 The card holds no `<div>`, because `article_body_span()` finds the end of the
 post body by the last `</div>` before the author box. The lint fails if a post
 has anything other than exactly one card, or if the card turns up on a page
@@ -268,8 +274,9 @@ The form posts `application/x-www-form-urlencoded` to the Apps Script endpoint
 (`TEARDOWN_ENDPOINT`) with the fields `name`, `email`, `store_url` (all
 required), `revenue_band`, `country`, `main_problem`, `source_page` (hidden,
 set to `location.pathname`, capped at 300 characters), `notes` (hidden, a
-compact first-touch string capped at 1000 characters, or `ref=direct` when
-there is no attribution) and `website` (a honeypot: visually hidden,
+compact first-touch string capped at 1000 characters, plus `from=<pathname>`
+when the referrer is another page on this site, or `ref=direct` when there
+is neither) and `website` (a honeypot: visually hidden,
 `aria-hidden`, `tabindex="-1"`, `autocomplete="off"`; a filled-in value is
 treated as sent without posting). The field names are the endpoint's contract.
 The script validates on the client (inline messages, `aria-invalid`, focus on

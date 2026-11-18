@@ -76,7 +76,7 @@ ORIGIN = json.loads((REPO / "generator" / "site.json").read_text(encoding="utf-8
 JSONLD_URL_KEYS = {"url", "@id", "item", "mainEntityOfPage"}
 ARTICLE_PROMO_START = "<!-- win-chat-promo:start -->"
 TEARDOWN_CTA_START = "<!-- teardown-cta:start -->"
-TEARDOWN_CTA_ASIDE = '<aside class="not-prose ss-teardown-cta mt-14 border-t border-ploy-border-primary/50 pt-10" aria-label="Book a teardown">'
+TEARDOWN_CTA_ASIDE = '<aside class="not-prose ss-teardown-cta" aria-label="Book a teardown">'
 TEARDOWN_PATH = "/teardown/"
 TEARDOWN_FORM_START = "<!-- teardown-form:start -->"
 TEARDOWN_FORM_END = "<!-- teardown-form:end -->"
@@ -312,6 +312,7 @@ def main() -> int:
                             ("gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'})", "GA4 consent default"),
                             ("window.__ssConsent", "cookie consent script"),
                             ("window.__ssAttr", "first-touch attribution script"),
+                            ('parts.push("from="+from)', "same-host from= path in attribution notes"),
                             ('<a href="/privacy/" class="text-ploy-text-primary/85 transition-colors hover:text-ploy-accent-primary">Privacy</a>', "footer privacy link")]:
             if attr not in h:
                 errors.append(f"{rel}: missing {label}")
