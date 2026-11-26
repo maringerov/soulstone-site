@@ -65,7 +65,7 @@ In practice:
 
 ## Agree on rules when several teams touch one store
 
-The hidden cost of a mixed setup shows up in the theme. At one skincare brand, an external agency and my development work were changing the same theme, and there were no shared rules. Work got overwritten and nobody was sure what was live.
+The hidden cost of a mixed setup shows up in the theme. At one brand, an external agency and my development work were changing the same theme, and there were no shared rules. Work got overwritten and nobody was sure what was live.
 
 So I wrote a short collaboration contract for both sides:
 

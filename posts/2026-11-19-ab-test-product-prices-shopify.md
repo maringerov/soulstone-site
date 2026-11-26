@@ -46,7 +46,7 @@ An example with made-up round numbers. At â‚¬60 the product converts at 2.0%: â‚
 
 Two more splits are worth reading:
 
-- **New and returning visitors.** On a Dutch skincare store I work with, about three in four orders come from returning customers. They know the old price. A regular who sees a higher price on a product they reorder is a different test from a new visitor seeing it for the first time.
+- **New and returning visitors.** On one store I work with, most orders come from returning customers. They know the old price. A regular who sees a higher price on a product they reorder is a different test from a new visitor seeing it for the first time.
 - **Traffic source.** A higher price can suit people who already know the brand and put off cold traffic from ads. After a rollout, watch paid ads for a few weeks: new customer acquisition cost and the share of new visitors.
 
 ## How much traffic do you need?
@@ -55,13 +55,13 @@ A common rule of thumb in CRO work is around 1,000 orders per variation before y
 
 That doesn't rule out price testing. It changes the plan. Test one price step across a group of products instead of one product, run it longer, and accept a wider margin of error. Compare the groups inside the test period, never the test against last month. This autumn Shopify started [filtering more bot traffic](/blog/conversion-rate-jump-bot-filtering/), and that moved conversion rates on its own.
 
-And fix the page first. On the same skincare store we put testing on hold in October until the baseline fixes were done. A test on a page with known problems mostly measures the problems.
+And fix the page first. On the same store we put testing on hold in October until the baseline fixes were done. A test on a page with known problems mostly measures the problems.
 
 ## When should you not run a price test?
 
 ### In sale weeks
 
-Black Friday traffic, discounts and gift offers swamp a price result. Run the test after the sale, when traffic is back to normal. A price test on the hero cream of that skincare store is one of the tests I have lined up for after Black Friday, not during it.
+Black Friday traffic, discounts and gift offers swamp a price result. Run the test after the sale, when traffic is back to normal. A price test on that store's best seller is one of the tests I have lined up for after Black Friday, not during it.
 
 ### When a "was" price is involved
 
@@ -71,7 +71,7 @@ EU rules also require telling shoppers when a price is personalised by automated
 
 ### On an entry product
 
-Some products are priced to bring people in. On the skincare store, about one in five buyers of a trial kit came back for a full-size product, mostly within about a week. That kit earns its keep on the second order, not the first. A test that only reads the first order would push its price up and miss the point.
+Some products are priced to bring people in. On that store, about one in five buyers of a trial kit came back for a full-size product, mostly within about a week. That kit earns its keep on the second order, not the first. A test that only reads the first order would push its price up and miss the point.
 
 ## What to test besides the number
 
